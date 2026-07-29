@@ -67,7 +67,7 @@ async def stream_analysis(
             logger.exception("analysis_stream_failed")
             yield _sse(
                 "error",
-                {"code": "internal_error", "message": "The analysis could not be completed."},
+                {"code": "internal_error", "message": "Analýzu sa nepodarilo dokončiť."},
             )
 
     return StreamingResponse(
@@ -89,7 +89,7 @@ async def stream_analysis(
 async def read_analysis(analysis_id: str, session: SessionDep) -> AnalysisResult:
     record = await repository.get_analysis(session, analysis_id)
     if record is None:
-        raise NotFound("No analysis with that id exists.")
+        raise NotFound("Analýza s takýmto id neexistuje.")
     result = AnalysisResult.model_validate(record.payload)
     result.from_cache = True
     return result

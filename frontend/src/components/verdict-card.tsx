@@ -10,7 +10,7 @@ import {
 
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
-import { money, percent, VERDICT_COPY } from "@/lib/format";
+import { counted, money, percent, VERDICT_COPY, YEARS } from "@/lib/format";
 import type { AnalysisResult } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
@@ -55,22 +55,22 @@ export function VerdictCard({ result }: { result: AnalysisResult }) {
         {decision !== "insufficient_evidence" && (
           <dl className="mt-6 grid gap-4 border-t border-border pt-5 sm:grid-cols-3">
             <Stat
-              label="Chance of a repair"
+              label="Šanca na opravu"
               value={percent(economics.failure_probability)}
-              hint={`over ${result.warranty_years} year${result.warranty_years === 1 ? "" : "s"}`}
+              hint={`za ${counted(result.warranty_years, ...YEARS)}`}
             />
             <Stat
-              label="Expected repair spend"
+              label="Očakávané výdavky"
               value={money(economics.expected_repair_cost, economics.currency)}
-              hint="probability-weighted"
+              hint="vážené pravdepodobnosťou"
             />
             <Stat
-              label="Extension price"
+              label="Cena predĺženia"
               value={money(economics.warranty_price, economics.currency)}
               hint={
                 economics.net_value >= 0
-                  ? `${money(economics.net_value, economics.currency)} in your favour`
-                  : `${money(Math.abs(economics.net_value), economics.currency)} against you`
+                  ? `${money(economics.net_value, economics.currency)} vo váš prospech`
+                  : `${money(Math.abs(economics.net_value), economics.currency)} vo váš neprospech`
               }
             />
           </dl>
@@ -100,7 +100,7 @@ export function VerdictCard({ result }: { result: AnalysisResult }) {
 
         {result.from_cache && (
           <Badge variant="outline" className="mt-5">
-            Reused from a recent verified analysis
+            Použité z nedávnej overenej analýzy
           </Badge>
         )}
       </CardContent>

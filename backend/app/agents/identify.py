@@ -49,7 +49,9 @@ class IdentificationAgent:
             # Without a model we still know what the customer typed. Everything
             # downstream treats low confidence as "we could not confirm this".
             return ProductIdentity(
-                display_name=query, confidence=0.0, reasoning="No language model is configured."
+                display_name=query,
+                confidence=0.0,
+                reasoning="Nie je nakonfigurovaný žiadny jazykový model.",
             )
 
         identity = ProductIdentity.model_validate(payload)

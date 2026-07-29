@@ -13,16 +13,17 @@ from app.agents.types import ComposedNarrative, ExtractedFailureMode, ProductIde
 from app.agents.verification import verify_narrative
 from app.core.errors import ProviderUnavailable
 from app.core.logging import get_logger
+from app.core.text import YEARS, counted
 from app.schemas.common import ConfidenceBand, Verdict
 from app.services.llm.base import LLMProvider
 
 logger = get_logger(__name__)
 
 _HEADLINES: dict[Verdict, str] = {
-    Verdict.RECOMMENDED: "Worth buying — repairs usually cost more",
-    Verdict.NEUTRAL: "A close call — it depends on your risk appetite",
-    Verdict.NOT_RECOMMENDED: "Probably not worth it — repairs are usually cheaper",
-    Verdict.INSUFFICIENT_EVIDENCE: "Not enough information to give you a straight answer",
+    Verdict.RECOMMENDED: "Oplatí sa — opravy zvyčajne stoja viac",
+    Verdict.NEUTRAL: "Tesné — záleží na tom, koľko rizika znesiete",
+    Verdict.NOT_RECOMMENDED: "Skôr sa neoplatí — opravy bývajú lacnejšie",
+    Verdict.INSUFFICIENT_EVIDENCE: "Nemáme dosť podkladov na jednoznačnú odpoveď",
 }
 
 
@@ -105,32 +106,32 @@ def build_fallback_narrative(
 
     if verdict is Verdict.INSUFFICIENT_EVIDENCE:
         summary = (
-            f"We could not find reliable public repair information for "
-            f"{identity.display_name}, so we will not guess. Ask the retailer what a "
-            f"typical out-of-warranty repair costs for this model before deciding."
+            f"Pre {identity.display_name} sme nenašli dôveryhodné verejné informácie "
+            f"o cenách opráv, a hádať nebudeme. Pred rozhodnutím sa predajcu opýtajte, "
+            f"koľko pri tomto modeli zvyčajne stojí oprava po záruke."
         )
         return ComposedNarrative(
             headline=headline,
             summary=summary,
-            reasons=reasons or ["No usable repair data was found."],
+            reasons=reasons or ["Nenašli sme použiteľné údaje o opravách."],
         )
 
     top = failure_modes[0] if failure_modes else None
     likely = (
-        f"The most likely problem is {top.name.lower()}, which typically costs about "
-        f"{top.cost.typical:.0f} {currency} to fix. "
+        f"Najpravdepodobnejšia porucha je {top.name.lower()}, ktorej oprava stojí "
+        f"zvyčajne okolo {top.cost.typical:.0f} {currency}. "
         if top
         else ""
     )
     summary = (
-        f"Over {years} year{'s' if years != 1 else ''} after the manufacturer's warranty ends, "
-        f"there is roughly a {economics.failure_probability * 100:.0f}% chance "
-        f"{identity.display_name} needs a repair. {likely}"
-        f"Weighing that against the {economics.warranty_price:.0f} {currency} extension, "
-        f"expected repair spending comes to about {economics.expected_repair_cost:.0f} {currency}."
+        f"Za {counted(years, *YEARS)} od skončenia výrobcovej záruky je "
+        f"približne {economics.failure_probability * 100:.0f}% šanca, že "
+        f"{identity.display_name} bude potrebovať opravu. {likely}"
+        f"Oproti cene predĺženia {economics.warranty_price:.0f} {currency} vychádzajú "
+        f"očakávané výdavky na opravy asi na {economics.expected_repair_cost:.0f} {currency}."
     )
     if confidence.band is ConfidenceBand.LOW:
-        summary += " Public data on this model is thin, so treat these figures as indicative."
+        summary += " Verejných údajov o tomto modeli je málo, berte preto čísla ako orientačné."
 
     return ComposedNarrative(headline=headline, summary=summary, reasons=reasons[:4])
 

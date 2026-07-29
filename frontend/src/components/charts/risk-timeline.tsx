@@ -59,7 +59,7 @@ export function RiskTimeline({ points, currency, className }: RiskTimelineProps)
         viewBox={`0 0 ${WIDTH} ${HEIGHT}`}
         className="h-auto w-full touch-none"
         role="img"
-        aria-label={`Chance of needing a repair rises to ${percent(last.cumulative_failure_probability)} by year ${last.year}.`}
+        aria-label={`Šanca na opravu stúpa na ${percent(last.cumulative_failure_probability)} do ${last.year}. roka.`}
         onMouseLeave={() => setActive(null)}
       >
         <defs>
@@ -109,7 +109,7 @@ export function RiskTimeline({ points, currency, className }: RiskTimelineProps)
               textAnchor="middle"
               className="fill-muted-foreground text-[11px]"
             >
-              Year {point.year}
+              {point.year}. rok
             </text>
             <circle
               cx={x(index)}
@@ -130,7 +130,7 @@ export function RiskTimeline({ points, currency, className }: RiskTimelineProps)
               onFocus={() => setActive(index)}
               tabIndex={0}
               role="button"
-              aria-label={`Year ${point.year}: ${percent(point.cumulative_failure_probability)} chance, ${money(point.cumulative_expected_cost, currency)} expected`}
+              aria-label={`${point.year}. rok: ${percent(point.cumulative_failure_probability)} šanca, očakávané ${money(point.cumulative_expected_cost, currency)}`}
               className="cursor-crosshair focus:outline-none"
             />
           </g>
@@ -165,35 +165,35 @@ export function RiskTimeline({ points, currency, className }: RiskTimelineProps)
       <figcaption className="mt-1 flex min-h-[1.5rem] items-center justify-between text-xs">
         {activePoint ? (
           <span className="text-foreground">
-            <span className="font-semibold">Year {activePoint.year}</span>
+            <span className="font-semibold">{activePoint.year}. rok</span>
             <span className="text-muted-foreground">
               {" · "}
-              {percent(activePoint.cumulative_failure_probability)} chance of a repair ·{" "}
-              {money(activePoint.cumulative_expected_cost, currency)} expected spend
+              {percent(activePoint.cumulative_failure_probability)} šanca na opravu ·{" "}
+              očakávané výdavky {money(activePoint.cumulative_expected_cost, currency)}
             </span>
           </span>
         ) : (
           <span className="text-muted-foreground">
-            Chance of needing at least one repair, and the expected spend by then.
+            Šanca na aspoň jednu opravu a očakávané výdavky do tej doby.
           </span>
         )}
       </figcaption>
 
       <details className="mt-3 text-xs">
         <summary className="cursor-pointer text-muted-foreground hover:text-foreground">
-          View as table
+          Zobraziť ako tabuľku
         </summary>
         <table className="mt-2 w-full border-collapse text-left">
           <thead className="text-muted-foreground">
             <tr>
               <th scope="col" className="py-1 pr-4 font-medium">
-                Year
+                Rok
               </th>
               <th scope="col" className="py-1 pr-4 font-medium">
-                Chance of a repair
+                Šanca na opravu
               </th>
               <th scope="col" className="py-1 font-medium">
-                Expected spend
+                Očakávané výdavky
               </th>
             </tr>
           </thead>

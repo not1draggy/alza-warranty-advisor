@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/misc";
 import { getHistory } from "@/lib/api";
-import { money, relativeDate, VERDICT_COPY } from "@/lib/format";
+import { counted, money, relativeDate, VERDICT_COPY, YEARS } from "@/lib/format";
 import { getSessionId } from "@/lib/session";
 
 export default function HistoryPage() {
@@ -26,10 +26,10 @@ export default function HistoryPage() {
   return (
     <div className="container max-w-3xl py-12">
       <div className="mb-6">
-        <h1 className="text-2xl font-semibold tracking-tight">Your searches</h1>
+        <h1 className="text-2xl font-semibold tracking-tight">Vaše vyhľadávania</h1>
         <p className="mt-1.5 text-sm text-muted-foreground">
-          Stored on this device only. Sign in from the API to keep history across
-          devices.
+          Uložené len v tomto zariadení. Po prihlásení cez API sa história zachová
+          aj na iných zariadeniach.
         </p>
       </div>
 
@@ -44,7 +44,7 @@ export default function HistoryPage() {
       {isError && (
         <Card>
           <CardContent className="py-8 text-center text-sm text-muted-foreground">
-            History could not be loaded. Check that the API is reachable.
+            Históriu sa nepodarilo načítať. Skontrolujte, či je API dostupné.
           </CardContent>
         </Card>
       )}
@@ -55,9 +55,9 @@ export default function HistoryPage() {
             <span className="mb-2 flex size-11 items-center justify-center rounded-full bg-muted">
               <HistoryIcon className="size-5 text-muted-foreground" aria-hidden />
             </span>
-            <CardTitle>No searches yet</CardTitle>
+            <CardTitle>Zatiaľ žiadne vyhľadávania</CardTitle>
             <CardDescription>
-              Analyse a product and it will appear here.
+              Zanalyzujte produkt a objaví sa tu.
             </CardDescription>
           </CardHeader>
           <CardContent className="text-center">
@@ -65,7 +65,7 @@ export default function HistoryPage() {
               href="/"
               className="text-sm font-medium text-data underline underline-offset-4"
             >
-              Analyse a product
+              Zanalyzovať produkt
             </Link>
           </CardContent>
         </Card>
@@ -84,8 +84,7 @@ export default function HistoryPage() {
                         {entry.product_name ?? entry.query}
                       </p>
                       <p className="mt-0.5 text-xs text-muted-foreground">
-                        +{entry.warranty_years}
-                        {entry.warranty_years === 1 ? " year" : " years"} ·{" "}
+                        +{counted(entry.warranty_years, ...YEARS)} ·{" "}
                         {money(entry.warranty_price, entry.currency)} ·{" "}
                         {relativeDate(entry.created_at)}
                       </p>
@@ -93,7 +92,7 @@ export default function HistoryPage() {
                     <div className="flex shrink-0 items-center gap-2">
                       {entry.risk_score != null && (
                         <Badge variant="outline">
-                          risk {entry.risk_score.toFixed(0)}
+                          riziko {entry.risk_score.toFixed(0)}
                         </Badge>
                       )}
                       {verdict && (

@@ -153,8 +153,8 @@ def risk_drivers(
     for mode in ranked[:limit]:
         probability = economics.window_probabilities.get(mode.slug, 0.0)
         drivers.append(
-            f"{mode.name}: {probability * 100:.0f}% chance over the period, "
-            f"typically {mode.cost.typical:.0f} {economics.currency}"
+            f"{mode.name}: {probability * 100:.0f}% šanca za dané obdobie, "
+            f"zvyčajne {mode.cost.typical:.0f} {economics.currency}"
         )
     return drivers
 
@@ -170,50 +170,50 @@ def decide_verdict(
 
     if evidence_level is EvidenceLevel.NONE:
         return Verdict.INSUFFICIENT_EVIDENCE, [
-            "No reliable public repair information was found for this product."
+            "Pre tento produkt sme nenašli dôveryhodné verejné informácie o opravách."
         ]
 
     if economics.warranty_price <= 0:
-        return Verdict.RECOMMENDED, ["The extension costs nothing, so it carries no downside."]
+        return Verdict.RECOMMENDED, ["Predĺženie nič nestojí, takže nemá žiadnu nevýhodu."]
 
     ratio = economics.value_ratio
     if ratio >= RECOMMEND_RATIO:
         verdict = Verdict.RECOMMENDED
         reasons.append(
-            f"Expected repair spending ({economics.expected_repair_cost:.0f} "
-            f"{economics.currency}) is about {ratio:.1f}× the price of the extension."
+            f"Očakávané výdavky na opravy ({economics.expected_repair_cost:.0f} "
+            f"{economics.currency}) sú približne {ratio:.1f}× vyššie ako cena predĺženia."
         )
     elif ratio >= NEUTRAL_RATIO:
         verdict = Verdict.NEUTRAL
         reasons.append(
-            f"Expected repair spending ({economics.expected_repair_cost:.0f} "
-            f"{economics.currency}) is close to the price of the extension."
+            f"Očakávané výdavky na opravy ({economics.expected_repair_cost:.0f} "
+            f"{economics.currency}) sú blízko cene predĺženia."
         )
     else:
         verdict = Verdict.NOT_RECOMMENDED
         reasons.append(
-            f"Expected repair spending ({economics.expected_repair_cost:.0f} "
-            f"{economics.currency}) is well below the price of the extension."
+            f"Očakávané výdavky na opravy ({economics.expected_repair_cost:.0f} "
+            f"{economics.currency}) sú výrazne nižšie ako cena predĺženia."
         )
 
     if economics.break_even_probability is not None:
         reasons.append(
-            f"The extension pays for itself if the chance of needing a repair exceeds "
-            f"{economics.break_even_probability * 100:.0f}%; the estimate is "
+            f"Predĺženie sa zaplatí, ak šanca na opravu presiahne "
+            f"{economics.break_even_probability * 100:.0f}%; odhad je "
             f"{economics.failure_probability * 100:.0f}%."
         )
 
     if verdict is Verdict.RECOMMENDED and confidence < MIN_CONFIDENCE_FOR_RECOMMENDATION:
         reasons.append(
-            "Evidence is thin, so this is presented as a balanced call rather than a "
-            "firm recommendation."
+            "Podkladov je málo, preto to uvádzame ako vyrovnané rozhodnutie, "
+            "nie ako jednoznačné odporúčanie."
         )
         verdict = Verdict.NEUTRAL
 
     if evidence_level is EvidenceLevel.MODELLED:
         reasons.append(
-            "No product-specific repair prices were found; category averages were used and "
-            "are labelled as estimates."
+            "Nenašli sme ceny opráv priamo pre tento produkt; použili sme priemery "
+            "za kategóriu a sú označené ako odhad."
         )
 
     return verdict, reasons

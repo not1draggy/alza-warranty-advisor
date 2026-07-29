@@ -1,6 +1,8 @@
 # Warranty Advisor AI
 
 Answers one question in five seconds: **should I buy this extended warranty?**
+The interface and everything the customer reads are in Slovak; the evidence it
+works from is mostly English and is translated on the way out.
 
 The customer types a product and the price of the extension. The system finds
 public repair information for that model, works out what repairs are likely to
@@ -8,13 +10,13 @@ cost after the manufacturer's warranty ends, and compares that against the price
 of the extension — showing its sources and its uncertainty.
 
 ```
-Samsung 75NU8000  ·  +3 years  ·  65.70 €
+Samsung 75NU8000  ·  +3 roky  ·  65,70 €
 
-  Worth buying — repairs usually cost more
-  21% chance of a repair · 152 € expected spend · 66 € extension
+  Oplatí sa — opravy zvyčajne stoja viac
+  21 % šanca na opravu · 152 € očakávané výdavky · 66 € predĺženie
 
-  Most likely: backlight failure, typically 280 €   [samsung.com] [ifixit.com]
-  Confidence 72% · 9 sources across 5 websites
+  Najčastejšie: porucha podsvietenia, zvyčajne 280 €  [samsung.com] [ifixit.com]
+  Spoľahlivosť 72 % · 9 zdrojov na 5 webstránkach
 ```
 
 ---
@@ -120,7 +122,9 @@ overstates the case for buying the warranty.
   never contradict the recommendation.
 * Every monetary amount and percentage in the generated wording is matched against
   the values the pipeline computed; an unsupported figure discards the whole
-  narrative in favour of a deterministic one (`agents/verification.py`).
+  narrative in favour of a deterministic one (`agents/verification.py`). The check
+  reads Slovak number formatting — "1 280,50 €", including a non-breaking space —
+  so a correctly written figure is never mistaken for an invented one.
 
 ---
 
@@ -136,7 +140,7 @@ backend/
     schemas/      request/response contracts
     services/     LLM router, search router, embeddings, RAG store, cache, repository
   alembic/        migrations (pgvector extension + HNSW index)
-  tests/          218 tests
+  tests/          234 tests
 frontend/
   src/app/        routes: analysis, history
   src/components/ verdict, detail panels, SVG charts, form, progress

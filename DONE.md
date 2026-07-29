@@ -45,10 +45,11 @@ built and how it was verified.
       PostgreSQL + pgvector, frontend lint/typecheck/build, and both Docker
       images built with layer caching.
 
-- [x] **tests pass** — 218 tests. Probability and cost mathematics, confidence
+- [x] **tests pass** — 234 tests. Probability and cost mathematics, confidence
       scoring, source classification, the injection guard, extraction clamping,
-      narrative verification, search de-duplication, provider failover, the
-      orchestrator's degraded paths, and the full HTTP surface including SSE.
+      narrative verification, Slovak noun forms and number parsing, search
+      de-duplication, provider failover, the orchestrator's degraded paths, and
+      the full HTTP surface including SSE.
       Additionally verified by running the real stack and driving the real UI in
       a headless browser end to end.
 

@@ -15,7 +15,7 @@ export function SiteHeader() {
             <ShieldCheck className="size-[18px]" aria-hidden />
           </span>
           <span>
-            Warranty Advisor
+            Poradca pri záruke
             <span className="ml-1.5 text-muted-foreground">AI</span>
           </span>
         </Link>
@@ -25,7 +25,7 @@ export function SiteHeader() {
             href="/history"
             className="rounded-md px-3 py-2 text-sm text-muted-foreground transition-colors hover:text-foreground"
           >
-            History
+            História
           </Link>
           <ThemeToggle />
         </div>

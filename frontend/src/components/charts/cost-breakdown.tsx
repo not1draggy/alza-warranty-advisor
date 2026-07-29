@@ -53,7 +53,7 @@ export function CostBreakdown({ modes, currency, className }: CostBreakdownProps
         viewBox={`0 0 ${WIDTH} ${height}`}
         className="h-auto w-full"
         role="img"
-        aria-label="Share of expected repair spending by failure type."
+        aria-label="Podiel očakávaných výdavkov na opravy podľa typu poruchy."
         onMouseLeave={() => setActive(null)}
       >
         {rows.map((row, index) => {
@@ -109,7 +109,7 @@ export function CostBreakdown({ modes, currency, className }: CostBreakdownProps
                 fill="transparent"
                 tabIndex={0}
                 role="button"
-                aria-label={`${row.name}: ${money(row.contribution, currency)} of expected spending, from a ${percent(row.probability)} chance of a ${money(row.typical, currency)} repair`}
+                aria-label={`${row.name}: ${money(row.contribution, currency)} z očakávaných výdavkov, pri ${percent(row.probability)} šanci na opravu za ${money(row.typical, currency)}`}
                 onMouseEnter={() => setActive(row.slug)}
                 onFocus={() => setActive(row.slug)}
                 className="cursor-pointer focus:outline-none"
@@ -127,8 +127,8 @@ export function CostBreakdown({ modes, currency, className }: CostBreakdownProps
           />
         ) : (
           <span className="text-muted-foreground">
-            Each bar is the chance of that failure multiplied by its typical repair
-            price.
+            Každý pruh je šanca na danú poruchu vynásobená jej zvyčajnou cenou
+            opravy.
           </span>
         )}
       </figcaption>
@@ -153,9 +153,9 @@ function ActiveRowCaption({
       <span className="font-semibold">{row.name}</span>
       <span className="text-muted-foreground">
         {" · "}
-        {percent(row.probability)} chance × {money(row.typical, currency)} typical
-        repair
-        {row.estimated ? " · price is an estimate" : ""}
+        {percent(row.probability)} šanca × zvyčajná oprava{" "}
+        {money(row.typical, currency)}
+        {row.estimated ? " · cena je odhad" : ""}
       </span>
     </span>
   );

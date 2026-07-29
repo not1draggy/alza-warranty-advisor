@@ -75,7 +75,7 @@ def score_confidence(
             source_count=source_count,
             independent_domains=domain_count,
             drivers=[],
-            uncertainties=["No usable public information was found for this product."],
+            uncertainties=["Pre tento produkt sme nenašli použiteľné verejné informácie."],
         )
 
     volume = min(1.0, source_count / MIN_SOURCES_FOR_FULL_CREDIT)
@@ -97,31 +97,29 @@ def score_confidence(
     uncertainties: list[str] = []
 
     if source_count >= MIN_SOURCES_FOR_FULL_CREDIT:
-        drivers.append(f"{source_count} independent sources were used.")
+        drivers.append(f"Navzájom nezávislých zdrojov: {source_count}.")
     else:
-        uncertainties.append(
-            f"Only {source_count} usable source{'s' if source_count != 1 else ''} were found."
-        )
+        uncertainties.append(f"Použiteľných zdrojov sme našli len {source_count}.")
 
     if domain_count >= MIN_DOMAINS_FOR_FULL_CREDIT:
-        drivers.append(f"Evidence spans {domain_count} different websites.")
+        drivers.append(f"Podklady pochádzajú z {domain_count} rôznych webstránok.")
     elif domain_count <= 1:
-        uncertainties.append("All evidence comes from a single website.")
+        uncertainties.append("Všetky podklady pochádzajú z jedinej webstránky.")
 
     if quality >= 0.7:
-        drivers.append("Most sources are manufacturer or professional repair references.")
+        drivers.append("Väčšina zdrojov sú výrobcovia alebo profesionálne servisy.")
     elif quality < 0.5:
-        uncertainties.append("Sources are mostly community discussions rather than official data.")
+        uncertainties.append("Zdroje sú prevažne diskusie používateľov, nie oficiálne údaje.")
 
     if identification >= 0.8:
-        drivers.append("The exact product model was identified with high certainty.")
+        drivers.append("Presný model produktu sme určili s vysokou istotou.")
     elif identification < 0.5:
-        uncertainties.append("The exact product model could not be confirmed.")
+        uncertainties.append("Presný model produktu sa nepodarilo potvrdiť.")
 
     if groundedness >= 0.7:
-        drivers.append("Repair prices come from cited sources rather than assumptions.")
+        drivers.append("Ceny opráv pochádzajú z citovaných zdrojov, nie z predpokladov.")
     else:
-        uncertainties.append("Some repair prices are modelled estimates, not published figures.")
+        uncertainties.append("Niektoré ceny opráv sú modelované odhady, nie zverejnené čísla.")
 
     return ConfidenceReport(
         score=score,

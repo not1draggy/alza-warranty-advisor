@@ -52,12 +52,11 @@ export default function HomePage() {
       <section className="container max-w-3xl py-12 sm:py-16">
         <div className="mb-8 text-center">
           <h1 className="text-balance text-3xl font-semibold tracking-tight sm:text-4xl">
-            Should you buy the extended warranty?
+            Oplatí sa vám predĺžená záruka?
           </h1>
           <p className="mx-auto mt-3 max-w-xl text-pretty text-muted-foreground">
-            Tell us the product and the price of the extension. We look up what
-            repairs actually cost after the manufacturer&apos;s warranty ends, and
-            show you the maths.
+            Zadajte produkt a cenu predĺženia. Zistíme, koľko naozaj stoja opravy
+            po skončení výrobcovej záruky, a ukážeme vám výpočet.
           </p>
         </div>
 
@@ -76,17 +75,17 @@ export default function HomePage() {
           <div className="mt-4 flex gap-2.5 rounded-md border border-caution/40 bg-caution/[0.06] p-4 text-sm text-caution">
             <AlertTriangle className="mt-0.5 size-4 shrink-0" aria-hidden />
             <p className="text-pretty">
-              This deployment has no{" "}
-              {!capabilities?.llm.configured ? "language model" : "search provider"}{" "}
-              configured, so analyses cannot run. Set the provider keys in the
-              environment and restart the API.
+              Táto inštancia nemá nastavený{" "}
+              {!capabilities?.llm.configured ? "jazykový model" : "vyhľadávač"}, takže
+              analýzu nemožno spustiť. Doplňte kľúče poskytovateľov do premenných
+              prostredia a reštartujte API.
             </p>
           </div>
         )}
 
         {analysis.phase === "idle" && !providersMissing && (
           <div className="mt-6 flex flex-wrap items-center justify-center gap-2">
-            <span className="text-xs text-muted-foreground">Try:</span>
+            <span className="text-xs text-muted-foreground">Skúste:</span>
             {EXAMPLES.map((item) => (
               <Button
                 key={item}
@@ -117,7 +116,7 @@ export default function HomePage() {
               </p>
               <Button variant="outline" size="sm" onClick={analysis.reset}>
                 <RotateCcw aria-hidden />
-                Start over
+                Začať odznova
               </Button>
             </CardContent>
           </Card>

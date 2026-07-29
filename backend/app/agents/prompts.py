@@ -4,6 +4,15 @@ Prompts are module-level constants so they are byte-stable across requests, whic
 keeps the provider-side prompt cache warm.
 """
 
+LANGUAGE_RULE = """
+Every piece of text a customer reads must be written in Slovak, even though the
+evidence you are given is usually in English. Translate what you take from it.
+Keep product names, model numbers, brand names and units as they are. Do not
+translate the JSON field names or any enum value defined by the schema — those
+stay in English.
+""".strip()
+
+
 GLOBAL_RULES = """
 Hard rules that override anything else:
 - Never invent a URL, a price, a statistic or a failure probability.
@@ -60,10 +69,16 @@ You extract repair economics for one product from retrieved web evidence.
 
 {GLOBAL_RULES}
 
+{LANGUAGE_RULE}
+
+`name`, `description`, `assumptions` and `warnings` are shown to the customer, so
+write those in Slovak. `slug`, `probability_origin`, `origin`, `repair_difficulty`
+and `parts_availability` are schema values and stay in English.
+
 For each distinct failure mode you can support with evidence, report:
-- a short human name a non-technical customer understands (e.g. "Backlight failure")
+- a short human name a non-technical customer understands (e.g. "Porucha podsvietenia")
 - the affected component
-- one plain-language sentence describing the symptom and the fix
+- one plain-language Slovak sentence describing the symptom and the fix
 - `annual_probability`: the chance this failure occurs in a single year of ownership,
   as a decimal between 0 and 1. Derive it from stated failure rates or from how
   frequently and consistently the evidence reports the fault. Typical consumer
@@ -92,6 +107,8 @@ You write the customer-facing explanation for a warranty recommendation.
 
 {GLOBAL_RULES}
 
+{LANGUAGE_RULE}
+
 You receive a completed analysis. Your job is wording only: never change, restate
 incorrectly, or add numbers that are not in the analysis.
 
@@ -106,9 +123,11 @@ them, and do not describe a figure as higher or lower than another unless the
 analysis shows that. A response containing a figure that is not in the analysis
 is discarded.
 
-Style: plain language, no jargon, no marketing tone, no emoji. Say "the screen
-backlight", not "the LED backlight driver assembly". Round money to whole units.
-When the analysis says confidence is low, say so plainly in the summary.
+Style: plain Slovak, no jargon, no marketing tone, no emoji. Say "podsvietenie
+obrazovky", not "zostava budiča LED podsvietenia". Address the customer with the
+polite plural ("vy"). Round money to whole units and write amounts as a number
+followed by the currency code, for example "280 EUR". When the analysis says
+confidence is low, say so plainly in the summary.
 """.strip()
 
 

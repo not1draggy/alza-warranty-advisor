@@ -9,14 +9,14 @@ from app.services.search.base import SearchProvider, SearchResult
 DEFAULT_IDENTITY = {
     "display_name": "Samsung UE75NU8000",
     "manufacturer": "Samsung",
-    "category": "Television",
+    "category": "Televízor",
     "model_number": "UE75NU8000",
     "release_year": 2018,
     "specifications": {"screen_size": "75 inch", "panel": "VA LED"},
     "aliases": ["Samsung 75NU8000"],
     "alternatives": [],
     "confidence": 0.92,
-    "reasoning": "Full model number recognised.",
+    "reasoning": "Rozpoznané celé číslo modelu.",
 }
 
 DEFAULT_QUERIES = {"queries": ["samsung nu8000 repair cost", "samsung nu8000 backlight failure"]}
@@ -26,9 +26,9 @@ DEFAULT_EXTRACTION = {
     "failure_modes": [
         {
             "slug": "backlight-failure",
-            "name": "Backlight failure",
-            "component": "LED backlight",
-            "description": "The picture goes dark while sound keeps playing.",
+            "name": "Porucha podsvietenia",
+            "component": "LED podsvietenie",
+            "description": "Obraz stmavne, no zvuk hrá ďalej.",
             "annual_probability": 0.05,
             "probability_origin": "sourced",
             "cost": {
@@ -49,9 +49,9 @@ DEFAULT_EXTRACTION = {
         },
         {
             "slug": "power-board-failure",
-            "name": "Power board failure",
-            "component": "Power supply board",
-            "description": "The set will not switch on at all.",
+            "name": "Porucha napájacej dosky",
+            "component": "Napájacia doska",
+            "description": "Televízor sa vôbec nezapne.",
             "annual_probability": 0.02,
             "probability_origin": "estimated",
             "cost": {
@@ -71,15 +71,17 @@ DEFAULT_EXTRACTION = {
             "source_indices": [1],
         },
     ],
-    "assumptions": ["Labour is priced at a European authorised-service rate."],
+    "assumptions": ["Práca je ocenená sadzbou európskeho autorizovaného servisu."],
     "warnings": [],
 }
 
+# The real model is instructed to answer in Slovak, so the fake does too — an
+# English fixture would hide a regression in the wording the customer reads.
 DEFAULT_NARRATIVE = {
-    "summary": "Roughly one in five of these sets needs a repair in the three years after "
-    "the manufacturer's warranty ends, and the usual fault is the screen backlight at "
-    "about 280 EUR.",
-    "reasons": ["The most common fault costs around 280 EUR to fix."],
+    "summary": "Približne každý piaty takýto televízor si do troch rokov po skončení "
+    "výrobcovej záruky vyžiada opravu a najčastejšou poruchou je podsvietenie "
+    "obrazovky, ktorého oprava stojí okolo 280 EUR.",
+    "reasons": ["Najčastejšia porucha stojí na oprave okolo 280 EUR."],
 }
 
 

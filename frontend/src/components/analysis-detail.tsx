@@ -14,14 +14,22 @@ import {
 } from "@/components/ui/card";
 import { Meter, Separator } from "@/components/ui/misc";
 import {
+  AVAILABILITY_COPY,
   CONFIDENCE_COPY,
+  counted,
+  DAYS,
+  DIFFICULTY_COPY,
+  EVIDENCE_LEVEL_COPY,
   money,
   ORIGIN_COPY,
+  ORIGIN_SHORT,
   percent,
   qualityLabel,
   relativeDate,
   RISK_COPY,
   SOURCE_TYPE_COPY,
+  SOURCES,
+  WEBSITES,
 } from "@/lib/format";
 import type { AnalysisResult, FailureMode, ValueOrigin } from "@/lib/types";
 
@@ -36,10 +44,10 @@ export function AnalysisDetail({ result }: { result: AnalysisResult }) {
         <div className="grid gap-6 lg:grid-cols-2">
           <Card>
             <CardHeader>
-              <CardTitle>How the risk builds up</CardTitle>
+              <CardTitle>Ako riziko narastá</CardTitle>
               <CardDescription>
-                Chance of needing at least one repair after the manufacturer&apos;s
-                warranty ends.
+                Šanca, že po skončení výrobcovej záruky bude potrebná aspoň jedna
+                oprava.
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -52,9 +60,9 @@ export function AnalysisDetail({ result }: { result: AnalysisResult }) {
 
           <Card>
             <CardHeader>
-              <CardTitle>Where the cost comes from</CardTitle>
+              <CardTitle>Z čoho vznikajú náklady</CardTitle>
               <CardDescription>
-                Expected spending attributed to each failure type.
+                Očakávané výdavky rozdelené podľa typu poruchy.
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -81,7 +89,7 @@ export function AnalysisDetail({ result }: { result: AnalysisResult }) {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Info className="size-4 text-muted-foreground" aria-hidden />
-              Assumptions behind these numbers
+              Predpoklady za týmito číslami
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -112,11 +120,11 @@ function ProductCard({ result }: { result: AnalysisResult }) {
             <CardDescription>
               {[product.manufacturer, product.category, product.release_year]
                 .filter(Boolean)
-                .join(" · ") || "Product details unavailable"}
+                .join(" · ") || "Podrobnosti o produkte nie sú dostupné"}
             </CardDescription>
           </div>
           <Badge variant={product.identification_confidence >= 0.7 ? "data" : "outline"}>
-            {percent(product.identification_confidence)} identification certainty
+            istota určenia {percent(product.identification_confidence)}
           </Badge>
         </div>
       </CardHeader>
@@ -134,7 +142,7 @@ function ProductCard({ result }: { result: AnalysisResult }) {
           )}
           {product.alternatives.length > 0 && (
             <p className="text-sm text-muted-foreground">
-              Other possible matches: {product.alternatives.join(", ")}
+              Ďalšie možné zhody: {product.alternatives.join(", ")}
             </p>
           )}
         </CardContent>
@@ -149,10 +157,10 @@ function FailureModesCard({ result }: { result: AnalysisResult }) {
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Wrench className="size-4 text-muted-foreground" aria-hidden />
-          What usually goes wrong
+          Čo sa zvyčajne pokazí
         </CardTitle>
         <CardDescription>
-          Ranked by how much each failure adds to expected repair spending.
+          Zoradené podľa toho, koľko každá porucha pridáva k očakávaným výdavkom.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-5">
@@ -198,27 +206,33 @@ function FailureModeRow({
       <div className="grid gap-3 sm:grid-cols-2">
         <div>
           <div className="mb-1.5 flex items-baseline justify-between text-xs">
-            <span className="text-muted-foreground">Chance over the period</span>
+            <span className="text-muted-foreground">Šanca za obdobie</span>
             <span className="font-medium tabular-nums">
               {percent(mode.window_probability)}
             </span>
           </div>
           <Meter
             value={mode.window_probability}
-            label={`${mode.name} likelihood`}
+            label={`Pravdepodobnosť: ${mode.name}`}
           />
         </div>
         <div className="flex flex-wrap items-center gap-1.5">
-          <OriginBadge origin={mode.cost.origin} label="price" />
-          <OriginBadge origin={mode.probability_origin} label="likelihood" />
+          <OriginBadge origin={mode.cost.origin} label="cena" />
+          <OriginBadge origin={mode.probability_origin} label="pravdepodobnosť" />
           {mode.repair_difficulty && (
-            <Badge variant="outline">{mode.repair_difficulty} repair</Badge>
+            <Badge variant="outline">
+              {DIFFICULTY_COPY[mode.repair_difficulty] ?? mode.repair_difficulty}
+            </Badge>
           )}
           {mode.typical_repair_days != null && (
-            <Badge variant="outline">~{mode.typical_repair_days} days</Badge>
+            <Badge variant="outline">
+              ~{counted(mode.typical_repair_days, ...DAYS)}
+            </Badge>
           )}
           {mode.parts_availability && (
-            <Badge variant="outline">parts: {mode.parts_availability}</Badge>
+            <Badge variant="outline">
+              {AVAILABILITY_COPY[mode.parts_availability] ?? mode.parts_availability}
+            </Badge>
           )}
         </div>
       </div>
@@ -248,7 +262,7 @@ function OriginBadge({ origin, label }: { origin: ValueOrigin; label: string }) 
   const variant = origin === "sourced" ? "data" : origin === "derived" ? "default" : "caution";
   return (
     <Badge variant={variant} title={ORIGIN_COPY[origin]}>
-      {label}: {origin}
+      {label}: {ORIGIN_SHORT[origin]}
     </Badge>
   );
 }
@@ -265,9 +279,9 @@ function RiskCard({ result }: { result: AnalysisResult }) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Ownership risk</CardTitle>
+        <CardTitle>Riziko vlastníctva</CardTitle>
         <CardDescription>
-          How likely and how expensive trouble is, on a 0–100 scale.
+          Ako pravdepodobné a ako drahé sú problémy, na škále 0–100.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -284,27 +298,27 @@ function RiskCard({ result }: { result: AnalysisResult }) {
             {RISK_COPY[risk.band]}
           </Badge>
         </div>
-        <Meter value={risk.score / 100} label="Ownership risk" tone={tone} />
+        <Meter value={risk.score / 100} label="Riziko vlastníctva" tone={tone} />
 
         <dl className="grid gap-3 pt-2 text-sm sm:grid-cols-2">
           <div>
-            <dt className="text-muted-foreground">Average repair, when it happens</dt>
+            <dt className="text-muted-foreground">Priemerná oprava, keď nastane</dt>
             <dd className="font-medium tabular-nums">
               {money(economics.average_repair_cost, economics.currency)}
             </dd>
           </div>
           <div>
-            <dt className="text-muted-foreground">Worst single repair</dt>
+            <dt className="text-muted-foreground">Najdrahšia jednotlivá oprava</dt>
             <dd className="font-medium tabular-nums">
               {money(economics.worst_case_repair_cost, economics.currency)}
             </dd>
           </div>
           {economics.break_even_probability != null && (
             <div className="sm:col-span-2">
-              <dt className="text-muted-foreground">Break-even point</dt>
+              <dt className="text-muted-foreground">Bod zvratu</dt>
               <dd className="font-medium">
-                The extension pays off above a{" "}
-                {percent(economics.break_even_probability)} chance of a repair.
+                Predĺženie sa oplatí nad {percent(economics.break_even_probability)}{" "}
+                šance na opravu.
               </dd>
             </div>
           )}
@@ -336,10 +350,10 @@ function ConfidenceCard({ result }: { result: AnalysisResult }) {
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <ShieldQuestion className="size-4 text-muted-foreground" aria-hidden />
-          How reliable is this estimate?
+          Aký spoľahlivý je tento odhad?
         </CardTitle>
         <CardDescription>
-          Based on how many independent, high-quality sources agreed.
+          Podľa toho, koľko nezávislých a kvalitných zdrojov sa zhodlo.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -353,14 +367,13 @@ function ConfidenceCard({ result }: { result: AnalysisResult }) {
             {CONFIDENCE_COPY[confidence.band]}
           </Badge>
         </div>
-        <Meter value={confidence.score} label="Confidence" tone={tone} />
+        <Meter value={confidence.score} label="Spoľahlivosť" tone={tone} />
 
         <p className="text-sm text-muted-foreground">
-          {confidence.source_count} source
-          {confidence.source_count === 1 ? "" : "s"} across{" "}
-          {confidence.independent_domains} website
-          {confidence.independent_domains === 1 ? "" : "s"} ·{" "}
-          <span className="capitalize">{confidence.evidence_level}</span> evidence
+          {counted(confidence.source_count, ...SOURCES)} na{" "}
+          {counted(confidence.independent_domains, ...WEBSITES)} ·{" "}
+          {EVIDENCE_LEVEL_COPY[confidence.evidence_level] ?? confidence.evidence_level}{" "}
+          podklady
         </p>
 
         {confidence.drivers.length > 0 && (
@@ -387,9 +400,9 @@ function SourcesCard({ result }: { result: AnalysisResult }) {
     return (
       <Card>
         <CardHeader>
-          <CardTitle>Sources</CardTitle>
+          <CardTitle>Zdroje</CardTitle>
           <CardDescription>
-            No public sources passed the quality checks for this product.
+            Pre tento produkt neprešiel kontrolou kvality žiadny verejný zdroj.
           </CardDescription>
         </CardHeader>
       </Card>
@@ -399,9 +412,9 @@ function SourcesCard({ result }: { result: AnalysisResult }) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Sources</CardTitle>
+        <CardTitle>Zdroje</CardTitle>
         <CardDescription>
-          Every figure above traces back to one of these pages.
+          Každé číslo vyššie sa dá dohľadať na jednej z týchto stránok.
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -422,7 +435,7 @@ function SourcesCard({ result }: { result: AnalysisResult }) {
                   <ExternalLink className="size-3.5 shrink-0" aria-hidden />
                 </a>
                 <p className="text-xs text-muted-foreground">
-                  {source.domain} · retrieved {relativeDate(source.retrieved_at)}
+                  {source.domain} · načítané {relativeDate(source.retrieved_at)}
                 </p>
               </div>
               <div className="flex shrink-0 items-center gap-2">

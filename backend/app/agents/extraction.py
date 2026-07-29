@@ -38,7 +38,7 @@ class ExtractionAgent:
         if not chunks:
             return ExtractionResult(
                 evidence_sufficient=False,
-                warnings=["No public repair information could be retrieved for this product."],
+                warnings=["Pre tento produkt sa nepodarilo získať verejné informácie o opravách."],
             )
 
         evidence = _format_evidence(chunks)
@@ -63,9 +63,7 @@ class ExtractionAgent:
             logger.warning("extraction_unavailable", error=str(exc))
             return ExtractionResult(
                 evidence_sufficient=False,
-                warnings=[
-                    "The analysis model is unavailable, so no repair estimate could be produced."
-                ],
+                warnings=["Analytický model je nedostupný, odhad opravy sa preto nedal vytvoriť."],
             )
 
         result = ExtractionResult.model_validate(payload)

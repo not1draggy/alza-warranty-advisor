@@ -62,18 +62,18 @@ def validate_query(raw: str) -> str:
     text = " ".join(text.split())
 
     if not text:
-        raise UnsafeInput("Enter a product name or model number.")
+        raise UnsafeInput("Zadajte názov produktu alebo číslo modelu.")
     if len(text) > MAX_QUERY_LENGTH:
-        raise UnsafeInput(f"Product names must be {MAX_QUERY_LENGTH} characters or fewer.")
+        raise UnsafeInput(f"Názov produktu môže mať najviac {MAX_QUERY_LENGTH} znakov.")
 
     for pattern in _INJECTION_PATTERNS:
         if pattern.search(text):
             raise UnsafeInput(
-                "That does not look like a product name. Enter a product name or model number."
+                "Toto nevyzerá ako názov produktu. Zadajte názov produktu alebo číslo modelu."
             )
     if _SQL_PATTERNS.search(text):
         raise UnsafeInput(
-            "That does not look like a product name. Enter a product name or model number."
+            "Toto nevyzerá ako názov produktu. Zadajte názov produktu alebo číslo modelu."
         )
     return text
 

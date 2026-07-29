@@ -113,7 +113,7 @@ class TestScoreConfidence:
         )
         assert report.score < 0.45
         assert report.band is ConfidenceBand.LOW
-        assert any("single website" in item for item in report.uncertainties)
+        assert any("jedinej webstránky" in item for item in report.uncertainties)
 
     def test_score_is_bounded(self):
         report = score_confidence(

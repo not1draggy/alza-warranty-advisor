@@ -252,7 +252,7 @@ class TestVerdict:
             evidence_level=EvidenceLevel.PARTIAL,
         )
         assert verdict is Verdict.NEUTRAL
-        assert any("thin" in reason for reason in reasons)
+        assert any("Podkladov je málo" in reason for reason in reasons)
 
     def test_free_extension_is_always_recommended(self):
         verdict, _ = decide_verdict(
@@ -266,4 +266,4 @@ class TestVerdict:
             confidence=0.6,
             evidence_level=EvidenceLevel.MODELLED,
         )
-        assert any("category averages" in reason for reason in reasons)
+        assert any("priemery" in reason for reason in reasons)

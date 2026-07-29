@@ -17,13 +17,23 @@ from dataclasses import dataclass
 from app.agents.risk import Economics
 from app.agents.types import ExtractedFailureMode
 
-# 280 EUR · €280 · 280.50 EUR · 1,280 EUR
+# Slovak groups thousands with a space — "1 280,50" — and both the formatter and
+# the model may use a non-breaking one. Only whole groups of three count, so a
+# space between unrelated numbers is not read as one figure.
+_THOUSANDS_SPACE = "   "
+_GROUPED = rf"\d{{1,3}}(?:[{_THOUSANDS_SPACE}]\d{{3}})+(?:[.,]\d+)?"
+# 280 · 280.50 · 1,280.50
+_PLAIN = r"\d[\d,.]*"
+# The grouped form is tried first; the plain one would match only its first group.
+_NUMBER = rf"(?:{_GROUPED}|{_PLAIN})"
+
+# 280 EUR · €280 · 280,50 EUR · 1 280 EUR · 1,280 EUR
 _AMOUNT_AFTER = re.compile(
     # `\b` binds only to the letter codes: it would never match after "%" or "€".
-    r"(\d[\d,.]*)\s*(?:%|€|£|\$|(?:EUR|CZK|USD|GBP|PLN|HUF|SKK)\b)",
+    rf"({_NUMBER})\s*(?:%|€|£|\$|(?:EUR|CZK|USD|GBP|PLN|HUF|SKK)\b)",
     re.IGNORECASE,
 )
-_AMOUNT_BEFORE = re.compile(r"(?:€|£|\$)\s*(\d[\d,.]*)")
+_AMOUNT_BEFORE = re.compile(rf"(?:€|£|\$)\s*({_NUMBER})")
 
 # Money is rounded to whole units for display, so allow a unit of slack either way.
 MONEY_TOLERANCE = 1.5
@@ -99,6 +109,8 @@ def _matches_any(claim: float, permitted: set[float]) -> bool:
 
 def _to_float(raw: str) -> float | None:
     cleaned = raw.strip().rstrip(".,")
+    for space in _THOUSANDS_SPACE:
+        cleaned = cleaned.replace(space, "")
     # Thousands separators vary by locale; treat a trailing group of three as one.
     if ("," in cleaned and "." in cleaned) or re.fullmatch(r"\d{1,3}(,\d{3})+", cleaned):
         cleaned = cleaned.replace(",", "")

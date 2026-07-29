@@ -55,8 +55,27 @@ class TestExtractClaims:
         assert sorted(extract_claims(text)) == sorted(expected)
 
     def test_ignores_bare_integers(self):
-        # "3 years" and "2 sources" are not claims about money or risk.
-        assert extract_claims("over 3 years, from 2 sources") == []
+        # "3 roky" and "2 zdroje" are not claims about money or risk.
+        assert extract_claims("za 3 roky, z 2 zdrojov") == []
+
+    @pytest.mark.parametrize(
+        ("text", "expected"),
+        [
+            # Slovak groups thousands with a space and uses a decimal comma.
+            ("1 280 EUR", [1280.0]),
+            ("1 280 EUR", [1280.0]),  # non-breaking space
+            ("1 280,50 EUR", [1280.5]),
+            ("280,50 EUR", [280.5]),
+            ("19 %", [19.0]),
+            ("€1 280", [1280.0]),
+        ],
+    )
+    def test_reads_slovak_number_formatting(self, text: str, expected: list[float]):
+        assert sorted(extract_claims(text)) == sorted(expected)
+
+    def test_a_space_between_unrelated_numbers_is_not_one_figure(self):
+        # Only whole groups of three join, so "8 zdrojov" stays separate.
+        assert extract_claims("8 zdrojov, oprava 280 EUR") == [280.0]
 
 
 class TestVerifyNarrative:
@@ -122,7 +141,7 @@ class TestComposerGuard:
         )
         # The model cannot contradict the recommendation, because it never writes
         # the headline.
-        assert result.headline == "Probably not worth it — repairs are usually cheaper"
+        assert result.headline == "Skôr sa neoplatí — opravy bývajú lacnejšie"
 
     async def test_unsupported_figures_fall_back_to_the_deterministic_summary(self):
         result = await self._compose(

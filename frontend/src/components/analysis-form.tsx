@@ -6,10 +6,11 @@ import * as React from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { counted, YEARS } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
 const CURRENCIES = ["EUR", "CZK", "USD", "GBP", "PLN"] as const;
-const YEARS = [1, 2, 3] as const;
+const TERMS = [1, 2, 3] as const;
 
 export interface AnalysisFormValues {
   query: string;
@@ -49,12 +50,12 @@ export function AnalysisForm({
     event.preventDefault();
     const trimmed = query.trim();
     if (trimmed.length < 2) {
-      setError("Enter a product name or model number.");
+      setError("Zadajte názov produktu alebo číslo modelu.");
       return;
     }
     const parsedPrice = Number.parseFloat(price.replace(",", "."));
     if (!Number.isFinite(parsedPrice) || parsedPrice < 0) {
-      setError("Enter the price of the warranty extension.");
+      setError("Zadajte cenu predĺženia záruky.");
       return;
     }
     const parsedProduct = Number.parseFloat(productPrice.replace(",", "."));
@@ -72,7 +73,7 @@ export function AnalysisForm({
   return (
     <form onSubmit={handleSubmit} className="space-y-5" noValidate>
       <div className="space-y-2">
-        <Label htmlFor="product">Product name or model number</Label>
+        <Label htmlFor="product">Názov produktu alebo číslo modelu</Label>
         <div className="relative">
           <Search
             className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
@@ -95,10 +96,10 @@ export function AnalysisForm({
 
       <fieldset className="space-y-2">
         <legend className="mb-2 text-sm font-medium text-foreground/90">
-          Warranty extension
+          Predĺženie záruky
         </legend>
         <div className="flex flex-wrap gap-2">
-          {YEARS.map((value) => (
+          {TERMS.map((value) => (
             <button
               key={value}
               type="button"
@@ -112,7 +113,7 @@ export function AnalysisForm({
                   : "border-input text-muted-foreground hover:text-foreground",
               )}
             >
-              +{value} {value === 1 ? "year" : "years"}
+              +{counted(value, ...YEARS)}
             </button>
           ))}
         </div>
@@ -120,7 +121,7 @@ export function AnalysisForm({
 
       <div className="grid gap-4 sm:grid-cols-3">
         <div className="space-y-2 sm:col-span-1">
-          <Label htmlFor="price">Extension price</Label>
+          <Label htmlFor="price">Cena predĺženia</Label>
           <Input
             id="price"
             name="price"
@@ -133,7 +134,7 @@ export function AnalysisForm({
         </div>
 
         <div className="space-y-2 sm:col-span-1">
-          <Label htmlFor="currency">Currency</Label>
+          <Label htmlFor="currency">Mena</Label>
           <select
             id="currency"
             name="currency"
@@ -152,7 +153,7 @@ export function AnalysisForm({
 
         <div className="space-y-2 sm:col-span-1">
           <Label htmlFor="product-price">
-            Product price <span className="text-muted-foreground">(optional)</span>
+            Cena produktu <span className="text-muted-foreground">(nepovinné)</span>
           </Label>
           <Input
             id="product-price"
@@ -176,10 +177,10 @@ export function AnalysisForm({
         {busy ? (
           <>
             <Loader2 className="animate-spin" aria-hidden />
-            Analysing…
+            Analyzujeme…
           </>
         ) : (
-          "Should I buy this warranty?"
+          "Oplatí sa mi táto záruka?"
         )}
       </Button>
     </form>

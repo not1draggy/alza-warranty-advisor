@@ -36,6 +36,7 @@ from app.agents.risk import (
 from app.agents.types import ExtractedFailureMode, ProductIdentity
 from app.core.config import Settings
 from app.core.logging import get_logger
+from app.core.text import FAULTS, PAGES, PASSAGES, SOURCES, counted
 from app.db.models import Source
 from app.schemas.analysis import (
     AnalysisRequest,
@@ -60,13 +61,13 @@ from app.services.rag import RagStore, RetrievedChunk
 logger = get_logger(__name__)
 
 _STAGES: list[tuple[str, str, float]] = [
-    ("identify", "Identifying the exact product", 0.12),
-    ("search", "Searching public repair sources", 0.30),
-    ("verify", "Checking source quality", 0.45),
-    ("retrieve", "Reading the most relevant passages", 0.58),
-    ("extract", "Extracting failures and repair prices", 0.78),
-    ("quantify", "Calculating probability, cost and risk", 0.90),
-    ("compose", "Writing the recommendation", 0.97),
+    ("identify", "Určujeme presný produkt", 0.12),
+    ("search", "Prehľadávame verejné zdroje o opravách", 0.30),
+    ("verify", "Overujeme kvalitu zdrojov", 0.45),
+    ("retrieve", "Čítame najrelevantnejšie pasáže", 0.58),
+    ("extract", "Získavame poruchy a ceny opráv", 0.78),
+    ("quantify", "Počítame pravdepodobnosť, náklady a riziko", 0.90),
+    ("compose", "Píšeme odporúčanie", 0.97),
 ]
 
 
@@ -107,7 +108,7 @@ class AnalysisOrchestrator:
             if cached is not None:
                 yield AnalysisStage(
                     stage="cache",
-                    label="Reusing a recent verified analysis",
+                    label="Používame nedávnu overenú analýzu",
                     status="done",
                     progress=1.0,
                 )
@@ -135,12 +136,12 @@ class AnalysisOrchestrator:
         if deps.evidence.search_configured:
             queries = await deps.evidence.plan_queries(identity)
             verified = await deps.evidence.gather(queries)
-            yield _done("search", f"{len(verified)} candidate pages")
+            yield _done("search", f"{counted(len(verified), *PAGES)} na posúdenie")
 
             yield _running("verify")
             if not verified:
                 warnings.append("No public repair sources passed the quality checks.")
-            yield _done("verify", f"{len(verified)} sources accepted")
+            yield _done("verify", f"prijatých {counted(len(verified), *SOURCES)}")
 
             yield _running("retrieve")
             product = await repository.upsert_product(deps.session, identity)
@@ -150,16 +151,16 @@ class AnalysisOrchestrator:
                 product_id=product.id,
                 limit=14,
             )
-            yield _done("retrieve", f"{len(chunks)} passages")
+            yield _done("retrieve", f"{counted(len(chunks), *PASSAGES)}")
         else:
             warnings.append(
                 "No web search provider is configured, so this answer has no public "
                 "sources behind it."
             )
             product = await repository.upsert_product(deps.session, identity)
-            yield _done("search", "search unavailable")
-            yield _done("verify", "skipped")
-            yield _done("retrieve", "skipped")
+            yield _done("search", "vyhľadávanie nedostupné")
+            yield _done("verify", "preskočené")
+            yield _done("retrieve", "preskočené")
 
         # --- extract --------------------------------------------------------
         yield _running("extract")
@@ -168,7 +169,7 @@ class AnalysisOrchestrator:
         )
         warnings.extend(extraction.warnings)
         assumptions.extend(extraction.assumptions)
-        yield _done("extract", f"{len(extraction.failure_modes)} failure modes")
+        yield _done("extract", f"{counted(len(extraction.failure_modes), *FAULTS)}")
 
         # --- quantify -------------------------------------------------------
         yield _running("quantify")
@@ -193,10 +194,10 @@ class AnalysisOrchestrator:
         score = compute_risk_score(economics, product_price=request.product_price)
         if request.product_price is None and extraction.failure_modes:
             assumptions.append(
-                "Risk is scored against a reference exposure of 500 EUR because no product "
-                "price was provided."
+                "Riziko je hodnotené voči referenčnej hodnote 500 EUR, pretože cena "
+                "produktu nebola zadaná."
             )
-        yield _done("quantify", f"risk {score:.0f}/100")
+        yield _done("quantify", f"riziko {score:.0f}/100")
 
         # --- compose --------------------------------------------------------
         yield _running("compose")
@@ -258,7 +259,7 @@ class AnalysisOrchestrator:
         )
         await deps.session.commit()
 
-        yield AnalysisStage(stage="done", label="Analysis complete", status="done", progress=1.0)
+        yield AnalysisStage(stage="done", label="Analýza dokončená", status="done", progress=1.0)
         yield result
 
 

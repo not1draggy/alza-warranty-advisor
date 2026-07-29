@@ -43,10 +43,11 @@ end to end, is tested, and handles its failure cases.
 - [x] Search history for signed-in users and anonymous sessions
 - [x] Dark mode first with an explicitly designed light theme
 - [x] Loading, empty, error and provider-missing states throughout
+- [x] Slovak throughout: interface, generated wording, number and date formatting
 
 ## Phase 5 — Production ✅
 
-- [x] 218 backend tests: business logic, guards, providers, full HTTP surface
+- [x] 234 backend tests: business logic, guards, providers, full HTTP surface
 - [x] End-to-end browser run against the real API and the production web build
 - [x] Lint, format and type checks clean (ruff, mypy, eslint, tsc)
 - [x] GitHub Actions: backend, migrations against real pgvector, frontend, images

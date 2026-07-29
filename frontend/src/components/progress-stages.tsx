@@ -17,9 +17,9 @@ export function ProgressStages({ stages, progress }: ProgressStagesProps) {
       className="space-y-4"
       role="status"
       aria-live="polite"
-      aria-label="Analysis progress"
+      aria-label="Priebeh analýzy"
     >
-      <Meter value={progress} label="Analysis progress" />
+      <Meter value={progress} label="Priebeh analýzy" />
       <ol className="space-y-2.5">
         {stages.map((stage) => (
           <li
