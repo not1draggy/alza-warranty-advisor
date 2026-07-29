@@ -27,6 +27,16 @@ if [ -n "${CODESPACE_NAME:-}" ]; then
 
   sed -i "s|^CORS_ORIGINS=.*|CORS_ORIGINS=${web}|" .env
   echo "→ Codespace detected; the app will be at ${web}"
+
+  # An earlier version of this script pointed the browser straight at the
+  # forwarded API port. That address survives in .env across a git pull, and
+  # docker compose bakes it into the frontend image as a build argument, so the
+  # web app would go cross-origin again and be blocked by CORS. Clear it.
+  if grep -q "^NEXT_PUBLIC_API_URL=https\?://.*\.${domain}" .env; then
+    sed -i "s|^NEXT_PUBLIC_API_URL=.*|NEXT_PUBLIC_API_URL=|" .env
+    echo "→ Removed a stale forwarded API URL from .env; rebuild with:"
+    echo "     docker compose up --build -d"
+  fi
 fi
 
 cat <<'EOF'
