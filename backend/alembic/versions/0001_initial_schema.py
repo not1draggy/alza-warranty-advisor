@@ -8,9 +8,9 @@ Create Date: 2026-07-29
 from collections.abc import Sequence
 
 import sqlalchemy as sa
-from alembic import op
 from pgvector.sqlalchemy import Vector
 
+from alembic import op
 from app.core.config import get_settings
 
 revision: str = "0001"
@@ -56,7 +56,6 @@ def upgrade() -> None:
         sa.Column("id", sa.String(36), primary_key=True),
         sa.Column("name", sa.String(160), nullable=False),
         sa.Column("slug", sa.String(160), nullable=False),
-        sa.Column("baseline_annual_failure_rate", sa.Float()),
         *_timestamps(),
     )
     op.create_index("ix_categories_slug", "categories", ["slug"], unique=True)
@@ -78,9 +77,7 @@ def upgrade() -> None:
         sa.Column("release_year", sa.Integer()),
         sa.Column("specifications", sa.JSON(), nullable=False),
         sa.Column("aliases", sa.JSON(), nullable=False),
-        sa.Column(
-            "identification_confidence", sa.Float(), nullable=False, server_default="0"
-        ),
+        sa.Column("identification_confidence", sa.Float(), nullable=False, server_default="0"),
         *_timestamps(),
     )
     op.create_index("ix_products_lookup_key", "products", ["lookup_key"], unique=True)
@@ -111,9 +108,7 @@ def upgrade() -> None:
             sa.ForeignKey("sources.id", ondelete="CASCADE"),
             nullable=False,
         ),
-        sa.Column(
-            "product_id", sa.String(36), sa.ForeignKey("products.id", ondelete="SET NULL")
-        ),
+        sa.Column("product_id", sa.String(36), sa.ForeignKey("products.id", ondelete="SET NULL")),
         sa.Column("title", sa.String(512)),
         sa.Column("content", sa.Text(), nullable=False),
         sa.Column("content_hash", sa.String(64), nullable=False),
@@ -134,9 +129,7 @@ def upgrade() -> None:
             sa.ForeignKey("documents.id", ondelete="CASCADE"),
             nullable=False,
         ),
-        sa.Column(
-            "product_id", sa.String(36), sa.ForeignKey("products.id", ondelete="SET NULL")
-        ),
+        sa.Column("product_id", sa.String(36), sa.ForeignKey("products.id", ondelete="SET NULL")),
         sa.Column("ordinal", sa.Integer(), nullable=False),
         sa.Column("content", sa.Text(), nullable=False),
         sa.Column("embedding", Vector(EMBEDDING_DIM)),
@@ -229,9 +222,7 @@ def upgrade() -> None:
     op.create_table(
         "analyses",
         sa.Column("id", sa.String(36), primary_key=True),
-        sa.Column(
-            "product_id", sa.String(36), sa.ForeignKey("products.id", ondelete="SET NULL")
-        ),
+        sa.Column("product_id", sa.String(36), sa.ForeignKey("products.id", ondelete="SET NULL")),
         sa.Column("fingerprint", sa.String(64), nullable=False),
         sa.Column("query", sa.String(512), nullable=False),
         sa.Column("warranty_years", sa.Integer(), nullable=False),
@@ -258,9 +249,7 @@ def upgrade() -> None:
         sa.Column("id", sa.String(36), primary_key=True),
         sa.Column("user_id", sa.String(36), sa.ForeignKey("users.id", ondelete="CASCADE")),
         sa.Column("session_id", sa.String(64)),
-        sa.Column(
-            "analysis_id", sa.String(36), sa.ForeignKey("analyses.id", ondelete="SET NULL")
-        ),
+        sa.Column("analysis_id", sa.String(36), sa.ForeignKey("analyses.id", ondelete="SET NULL")),
         sa.Column("query", sa.String(512), nullable=False),
         sa.Column("warranty_years", sa.Integer(), nullable=False),
         sa.Column("warranty_price", sa.Float(), nullable=False),

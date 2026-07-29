@@ -61,7 +61,7 @@ class RateLimiter:
             if ttl is None or ttl < 0:
                 await self._redis.expire(key, self._window)
                 ttl = self._window
-        except Exception as exc:  # noqa: BLE001 - degrade, never fail the request path
+        except Exception as exc:  # degrade, never fail the request path
             logger.warning("rate_limit_redis_unavailable", error=str(exc))
             return self._local.hit(key, self._limit, self._window)
 

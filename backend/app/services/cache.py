@@ -34,7 +34,7 @@ class Cache:
             return None
         try:
             raw = await self._redis.get(key)
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:
             logger.warning("cache_get_failed", key=key, error=str(exc))
             return None
         if raw is None:
@@ -51,7 +51,7 @@ class Cache:
             return
         try:
             await self._redis.set(key, json.dumps(value, default=str), ex=ttl_seconds)
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:
             logger.warning("cache_set_failed", key=key, error=str(exc))
 
     async def delete(self, key: str) -> None:
@@ -59,7 +59,7 @@ class Cache:
             return
         try:
             await self._redis.delete(key)
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:
             logger.warning("cache_delete_failed", key=key, error=str(exc))
 
     async def ping(self) -> bool:
@@ -67,5 +67,5 @@ class Cache:
             return False
         try:
             return bool(await self._redis.ping())
-        except Exception:  # noqa: BLE001
+        except Exception:
             return False

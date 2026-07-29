@@ -24,7 +24,7 @@ class AppError(Exception):
 
 
 class ValidationFailed(AppError):
-    status_code = status.HTTP_422_UNPROCESSABLE_ENTITY
+    status_code = 422
     code = "validation_failed"
     message = "The request could not be validated."
 
@@ -87,15 +87,13 @@ def register_exception_handlers(app: FastAPI) -> None:
         )
 
     @app.exception_handler(RequestValidationError)
-    async def _request_validation(
-        _request: Request, exc: RequestValidationError
-    ) -> JSONResponse:
+    async def _request_validation(_request: Request, exc: RequestValidationError) -> JSONResponse:
         fields = [
             {"field": ".".join(str(part) for part in err["loc"][1:]), "reason": err["msg"]}
             for err in exc.errors()
         ]
         return JSONResponse(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            status_code=422,
             content=_payload(
                 "validation_failed", "One or more fields are invalid.", {"fields": fields}
             ),
@@ -106,9 +104,7 @@ def register_exception_handlers(app: FastAPI) -> None:
         code = {401: "unauthorized", 403: "forbidden", 404: "not_found"}.get(
             exc.status_code, "http_error"
         )
-        return JSONResponse(
-            status_code=exc.status_code, content=_payload(code, str(exc.detail))
-        )
+        return JSONResponse(status_code=exc.status_code, content=_payload(code, str(exc.detail)))
 
     @app.exception_handler(Exception)
     async def _unhandled(_request: Request, exc: Exception) -> JSONResponse:

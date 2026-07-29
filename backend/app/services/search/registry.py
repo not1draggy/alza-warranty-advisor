@@ -108,9 +108,7 @@ class SearchRouter:
         results: list[SearchResult] = []
         for provider, outcome in zip(self._providers, outcomes, strict=True):
             if isinstance(outcome, BaseException):
-                logger.warning(
-                    "search_provider_failed", provider=provider.name, error=str(outcome)
-                )
+                logger.warning("search_provider_failed", provider=provider.name, error=str(outcome))
                 continue
             results.extend(outcome)
 

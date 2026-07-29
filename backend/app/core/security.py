@@ -1,25 +1,36 @@
-"""Password hashing and JWT issuing/verification."""
+"""Password hashing and JWT issuing/verification.
+
+bcrypt is used directly rather than through passlib, which depends on the `crypt`
+module removed in Python 3.13.
+"""
 
 from datetime import UTC, datetime, timedelta
 from typing import Any
 
+import bcrypt
 from jose import JWTError, jwt
-from passlib.context import CryptContext
 
 from app.core.config import get_settings
 from app.core.errors import Unauthorized
 
 ALGORITHM = "HS256"
-
-_pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+# bcrypt truncates at 72 bytes; rejecting longer input is clearer than silent truncation.
+MAX_PASSWORD_BYTES = 72
 
 
 def hash_password(password: str) -> str:
-    return _pwd_context.hash(password)
+    encoded = password.encode("utf-8")[:MAX_PASSWORD_BYTES]
+    return bcrypt.hashpw(encoded, bcrypt.gensalt()).decode("utf-8")
 
 
 def verify_password(password: str, password_hash: str) -> bool:
-    return _pwd_context.verify(password, password_hash)
+    try:
+        return bcrypt.checkpw(
+            password.encode("utf-8")[:MAX_PASSWORD_BYTES], password_hash.encode("utf-8")
+        )
+    except ValueError:
+        # Malformed hash in storage: treat as a failed login rather than a 500.
+        return False
 
 
 def create_access_token(subject: str, *, extra_claims: dict[str, Any] | None = None) -> str:
@@ -38,8 +49,6 @@ def create_access_token(subject: str, *, extra_claims: dict[str, Any] | None = N
 def decode_access_token(token: str) -> dict[str, Any]:
     settings = get_settings()
     try:
-        return jwt.decode(
-            token, settings.secret_key.get_secret_value(), algorithms=[ALGORITHM]
-        )
+        return jwt.decode(token, settings.secret_key.get_secret_value(), algorithms=[ALGORITHM])
     except JWTError as exc:
         raise Unauthorized("The access token is invalid or has expired.") from exc

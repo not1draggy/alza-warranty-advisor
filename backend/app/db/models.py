@@ -43,9 +43,6 @@ class Category(UUIDPrimaryKeyMixin, TimestampMixin, Base):
 
     name: Mapped[str] = mapped_column(sa.String(160), nullable=False)
     slug: Mapped[str] = mapped_column(sa.String(160), unique=True, index=True, nullable=False)
-    # Baseline annual failure rate for the category, used only when evidence is thin
-    # and always surfaced to the user as an assumption.
-    baseline_annual_failure_rate: Mapped[float | None] = mapped_column(sa.Float)
 
     products: Mapped[list["Product"]] = relationship(back_populates="category")
 
@@ -68,9 +65,7 @@ class Product(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     release_year: Mapped[int | None] = mapped_column(sa.Integer)
     specifications: Mapped[dict] = mapped_column(JSONColumn, default=dict, nullable=False)
     aliases: Mapped[list] = mapped_column(JSONColumn, default=list, nullable=False)
-    identification_confidence: Mapped[float] = mapped_column(
-        sa.Float, default=0.0, nullable=False
-    )
+    identification_confidence: Mapped[float] = mapped_column(sa.Float, default=0.0, nullable=False)
 
     manufacturer: Mapped[Manufacturer | None] = relationship(back_populates="products")
     category: Mapped[Category | None] = relationship(back_populates="products")
@@ -84,9 +79,7 @@ class Source(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     __tablename__ = "sources"
 
     url: Mapped[str] = mapped_column(sa.String(2048), nullable=False)
-    url_hash: Mapped[str] = mapped_column(
-        sa.String(64), unique=True, index=True, nullable=False
-    )
+    url_hash: Mapped[str] = mapped_column(sa.String(64), unique=True, index=True, nullable=False)
     domain: Mapped[str] = mapped_column(sa.String(255), index=True, nullable=False)
     title: Mapped[str | None] = mapped_column(sa.String(512))
     # manufacturer | authorized_service | repair_professional | parts_catalog |
@@ -158,9 +151,7 @@ class FailureMode(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     description: Mapped[str | None] = mapped_column(sa.Text)
     # Probability that this failure occurs in a single year of ownership.
     annual_probability: Mapped[float] = mapped_column(sa.Float, default=0.0, nullable=False)
-    probability_is_estimated: Mapped[bool] = mapped_column(
-        sa.Boolean, default=True, nullable=False
-    )
+    probability_is_estimated: Mapped[bool] = mapped_column(sa.Boolean, default=True, nullable=False)
     repair_difficulty: Mapped[str | None] = mapped_column(sa.String(32))
     typical_repair_days: Mapped[float | None] = mapped_column(sa.Float)
     parts_availability: Mapped[str | None] = mapped_column(sa.String(32))

@@ -89,8 +89,8 @@ class Economics(DomainModel):
     worst_case_repair_cost: float
     failure_probability: float = Field(ge=0, le=1)
     warranty_price: float
-    net_value: float          # expected_repair_cost - warranty_price
-    value_ratio: float        # expected_repair_cost / warranty_price (0 when price is 0)
+    net_value: float  # expected_repair_cost - warranty_price
+    value_ratio: float  # expected_repair_cost / warranty_price (0 when price is 0)
     break_even_probability: float | None = None
 
 
@@ -158,7 +158,7 @@ class AnalysisStage(DomainModel):
 
     stage: str
     label: str
-    status: str = "running"      # running | done | failed
+    status: str = "running"  # running | done | failed
     detail: str | None = None
     progress: float = Field(default=0.0, ge=0, le=1)
 

@@ -19,10 +19,10 @@ class Verdict(StrEnum):
 class EvidenceLevel(StrEnum):
     """How much of the answer rests on retrieved facts versus modelling."""
 
-    VERIFIED = "verified"          # multiple independent, high-quality sources agree
-    PARTIAL = "partial"            # some sourced facts, some modelled values
-    MODELLED = "modelled"          # category baselines only, clearly labelled
-    NONE = "none"                  # nothing retrievable; we refuse to guess
+    VERIFIED = "verified"  # multiple independent, high-quality sources agree
+    PARTIAL = "partial"  # some sourced facts, some modelled values
+    MODELLED = "modelled"  # category baselines only, clearly labelled
+    NONE = "none"  # nothing retrievable; we refuse to guess
 
 
 class ConfidenceBand(StrEnum):
@@ -52,6 +52,6 @@ class SourceType(StrEnum):
 class ValueOrigin(StrEnum):
     """Explicit provenance marker attached to every number we display."""
 
-    SOURCED = "sourced"        # taken from a cited document
-    DERIVED = "derived"        # computed from sourced values
-    ESTIMATED = "estimated"    # model assumption, no direct source
+    SOURCED = "sourced"  # taken from a cited document
+    DERIVED = "derived"  # computed from sourced values
+    ESTIMATED = "estimated"  # model assumption, no direct source
