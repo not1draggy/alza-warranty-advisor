@@ -85,6 +85,37 @@ DEFAULT_NARRATIVE = {
 }
 
 
+# What the model returns when nothing could be retrieved and it falls back to
+# general knowledge about the product class.
+DEFAULT_ESTIMATION = {
+    "product_class": "55-palcový QLED televízor strednej triedy",
+    "failure_modes": [
+        {
+            "slug": "panel-failure",
+            "name": "Porucha panela",
+            "component": "Zobrazovací panel",
+            "description": "Na obraze sa objavia pruhy alebo tmavé miesta.",
+            "annual_probability": 0.03,
+            "cost": {"currency": "EUR", "minimum": 250.0, "typical": 400.0, "maximum": 650.0},
+            "repair_difficulty": "hard",
+            "typical_repair_days": 7,
+            "confidence": 0.4,
+        },
+        {
+            "slug": "mainboard-failure",
+            "name": "Porucha základnej dosky",
+            "component": "Základná doska",
+            "description": "Televízor sa reštartuje alebo nereaguje na ovládač.",
+            "annual_probability": 0.02,
+            "cost": {"currency": "EUR", "minimum": 110.0, "typical": 180.0, "maximum": 300.0},
+            "repair_difficulty": "moderate",
+            "typical_repair_days": 5,
+            "confidence": 0.35,
+        },
+    ],
+}
+
+
 class FakeLLM(LLMProvider):
     """Returns canned JSON keyed on which schema was requested."""
 
@@ -103,6 +134,8 @@ class FakeLLM(LLMProvider):
         properties = set(kwargs["schema"].get("properties", {}))
         if "queries" in properties:
             return self._overrides.get("queries", DEFAULT_QUERIES)
+        if "product_class" in properties:
+            return self._overrides.get("estimation", DEFAULT_ESTIMATION)
         if "failure_modes" in properties:
             return self._overrides.get("extraction", DEFAULT_EXTRACTION)
         if "summary" in properties:

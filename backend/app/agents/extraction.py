@@ -24,6 +24,11 @@ MAX_ANNUAL_PROBABILITY = 0.35
 MAX_TYPICAL_COST = 100_000.0
 
 
+def slugify(value: str) -> str:
+    """Stable identifier for a failure mode, from its slug or its name."""
+    return _SLUG.sub("-", value.lower()).strip("-")
+
+
 class ExtractionAgent:
     def __init__(self, llm: LLMProvider) -> None:
         self._llm = llm
@@ -95,7 +100,7 @@ def _normalise(
         if not mode.name.strip():
             continue
 
-        slug = _SLUG.sub("-", (mode.slug or mode.name).lower()).strip("-")
+        slug = slugify(mode.slug or mode.name)
         if not slug or slug in seen_slugs:
             continue
         seen_slugs.add(slug)

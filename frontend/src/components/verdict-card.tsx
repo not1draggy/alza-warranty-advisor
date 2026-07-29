@@ -33,9 +33,24 @@ export function VerdictCard({ result }: { result: AnalysisResult }) {
   const copy = VERDICT_COPY[decision];
   const Icon = ICONS[decision];
   const { economics } = result;
+  // No figure here was read off a page, so this has to be the first thing the
+  // customer sees — above the headline, not buried beside it.
+  const isEstimate = result.confidence.evidence_level === "modelled";
 
   return (
     <Card className="overflow-hidden">
+      {isEstimate && (
+        <div className="flex gap-2.5 border-b border-caution/40 bg-caution/[0.10] px-5 py-3 text-sm text-caution sm:px-6">
+          <AlertTriangle className="mt-0.5 size-4 shrink-0" aria-hidden />
+          <p className="text-pretty">
+            <span className="font-semibold">Toto je odhad, nie overené údaje.</span>{" "}
+            Pre tento model sme nenašli konkrétne ceny opráv, takže čísla nižšie
+            vychádzajú zo všeobecných znalostí o podobných produktoch. Cenu si
+            overte u predajcu.
+          </p>
+        </div>
+      )}
+
       <div className={cn("border-b px-5 py-4 sm:px-6", TONE_STYLES[copy.tone])}>
         <div className="flex items-center gap-2 text-sm font-semibold">
           {/* Icon plus label: the verdict never depends on colour alone. */}

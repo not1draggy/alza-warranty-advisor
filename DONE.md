@@ -18,7 +18,9 @@ built and how it was verified.
       security guard, cache manager and the orchestrator that sequences them.
       The verdict headline is derived from the computed decision, and every
       figure in the generated wording is checked against the analysis before it
-      is shown.
+      is shown. When no evidence can be retrieved, a class-level estimate keeps
+      the customer from a dead end, labelled as an estimate everywhere it appears
+      and capped to low confidence.
 
 - [x] **search complete** — Tavily, SerpAPI and Google Programmable Search
       behind one interface, fanned out concurrently, de-duplicated by canonical
@@ -45,7 +47,7 @@ built and how it was verified.
       PostgreSQL + pgvector, frontend lint/typecheck/build, and both Docker
       images built with layer caching.
 
-- [x] **tests pass** — 234 tests. Probability and cost mathematics, confidence
+- [x] **tests pass** — 248 tests. Probability and cost mathematics, confidence
       scoring, source classification, the injection guard, extraction clamping,
       narrative verification, Slovak noun forms and number parsing, search
       de-duplication, provider failover, the orchestrator's degraded paths, and

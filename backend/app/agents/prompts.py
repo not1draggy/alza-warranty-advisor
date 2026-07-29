@@ -253,3 +253,80 @@ COMPOSER_SCHEMA = {
     "required": ["summary", "reasons"],
     "additionalProperties": False,
 }
+
+
+ESTIMATION_SYSTEM = f"""
+You estimate repair economics for a product when no usable public repair
+information could be retrieved for it.
+
+{LANGUAGE_RULE}
+
+This is explicitly an estimate from your general knowledge of the product class,
+not a claim about this specific model. Everything you return is labelled as an
+estimate before it reaches the customer, so be honest rather than confident:
+
+- Reason about the product CLASS, not the exact model. State the class you used
+  in `product_class` (for example "55-palcový QLED televízor strednej triedy").
+- List the failure modes that genuinely typify that class after the manufacturer's
+  warranty ends. Do not pad the list; three to five real ones beat six invented.
+- `annual_probability` is the chance in a single year of ownership, as a decimal.
+  Consumer electronics failure modes sit between 0.005 and 0.08 per year. Do not
+  exceed that without a specific, well-known defect in this class.
+- `cost` is the total repair cost in the requested currency at European service
+  rates, including parts and labour, as a plausible minimum, typical and maximum.
+- If you do not recognise the product class well enough to say anything useful,
+  return an empty `failure_modes` list. That is a valid and preferred answer.
+
+Never state or imply that these figures come from a source. Never name a shop, a
+price list, or a website.
+""".strip()
+
+
+ESTIMATION_SCHEMA = {
+    "type": "object",
+    "properties": {
+        "product_class": {"type": "string"},
+        "failure_modes": {
+            "type": "array",
+            "maxItems": 6,
+            "items": {
+                "type": "object",
+                "properties": {
+                    "slug": {"type": "string"},
+                    "name": {"type": "string"},
+                    "component": {"type": ["string", "null"]},
+                    "description": {"type": ["string", "null"]},
+                    "annual_probability": {"type": "number", "minimum": 0, "maximum": 1},
+                    "cost": {
+                        "type": "object",
+                        "properties": {
+                            "currency": {"type": "string"},
+                            "minimum": {"type": "number", "minimum": 0},
+                            "typical": {"type": "number", "minimum": 0},
+                            "maximum": {"type": "number", "minimum": 0},
+                        },
+                        "required": ["currency", "minimum", "typical", "maximum"],
+                        "additionalProperties": False,
+                    },
+                    "repair_difficulty": {"type": ["string", "null"]},
+                    "typical_repair_days": {"type": ["number", "null"]},
+                    "confidence": {"type": "number", "minimum": 0, "maximum": 1},
+                },
+                "required": [
+                    "slug",
+                    "name",
+                    "component",
+                    "description",
+                    "annual_probability",
+                    "cost",
+                    "repair_difficulty",
+                    "typical_repair_days",
+                    "confidence",
+                ],
+                "additionalProperties": False,
+            },
+        },
+    },
+    "required": ["product_class", "failure_modes"],
+    "additionalProperties": False,
+}

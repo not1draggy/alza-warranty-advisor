@@ -82,6 +82,7 @@ that it cannot produce an estimate rather than inventing one; `GET
 | **Verify** | Deterministic source classification and scoring; low-quality domains are dropped and no single site may supply more than three pages | `services/source_quality.py` |
 | **Retrieve** | Documents are chunked, embedded and stored once; retrieval is pgvector cosine similarity with a keyword fallback | `services/rag.py` |
 | **Extract** | Failure modes with annual probability, cost range, difficulty, parts availability, and the evidence indices that support them | `agents/extraction.py` |
+| **Estimate** | Only when extraction found nothing: typical failures for the product class, every value labelled as an estimate and capped to low confidence | `agents/estimate.py` |
 | **Quantify** | Probability and cost mathematics, risk score, confidence score, verdict | `agents/risk.py`, `agents/confidence.py` |
 | **Compose** | Plain-language wording over numbers it is not allowed to change; the headline comes from the verdict and every figure is verified before display | `agents/composer.py`, `agents/verification.py` |
 
@@ -116,8 +117,11 @@ overstates the case for buying the warranty.
   automatically (`agents/extraction.py`).
 * Absurd outputs are clamped: annual probability caps at 0.35, cost ranges are
   reordered rather than trusted blindly, zero-cost entries are dropped.
-* With no usable evidence the verdict is `insufficient_evidence` and no cost
-  figures are shown at all.
+* With no usable evidence the answer falls back to an estimate for the product
+  *class* (`agents/estimate.py`). Every value it produces is `estimated`, carries
+  no citation, drives the evidence level to `modelled`, is capped below the
+  low-confidence boundary, and is introduced by a banner saying so. When even that
+  yields nothing, the verdict is `insufficient_evidence` and no figures are shown.
 * The verdict headline is derived from the computed decision, so the wording can
   never contradict the recommendation.
 * Every monetary amount and percentage in the generated wording is matched against
@@ -140,7 +144,7 @@ backend/
     schemas/      request/response contracts
     services/     LLM router, search router, embeddings, RAG store, cache, repository
   alembic/        migrations (pgvector extension + HNSW index)
-  tests/          234 tests
+  tests/          248 tests
 frontend/
   src/app/        routes: analysis, history
   src/components/ verdict, detail panels, SVG charts, form, progress

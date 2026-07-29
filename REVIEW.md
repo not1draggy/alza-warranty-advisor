@@ -102,10 +102,24 @@ to read first. Fixed with `scroll-mt-20`.
 
 ## Deliberate decisions worth stating
 
-**No fabricated baselines.** An earlier design had category-level default failure
-rates for products with no evidence. That is inventing data, so it was removed
-along with the column that stored it. With no usable evidence the verdict is
-`insufficient_evidence` and no cost figures are shown at all.
+**A labelled estimate rather than a dead end.** When nothing usable is retrieved,
+the product used to stop at `insufficient_evidence` and show no figures at all.
+That is defensible but not useful: a customer standing at a checkout still has to
+decide. It now falls back to `agents/estimate.py`, which asks the model what
+typically fails on that *class* of product.
+
+The line this does not cross is presenting a guess as a fact. Every value the
+fallback produces is forced to `estimated` and carries no citation, the evidence
+level becomes `modelled`, confidence is capped below the low/medium boundary so it
+can never read as anything but low, and the verdict card opens with a banner
+saying the figures are an estimate and the price should be checked with the
+retailer. `tests/test_estimate.py` holds those properties, including that a model
+which tries to declare its own value `sourced` is overridden.
+
+`insufficient_evidence` still exists, for the case where the fallback has nothing
+to offer either. Hard-coded category baselines remain rejected: the estimate is
+reasoned per product class at request time and labelled, not a stored number
+masquerading as data.
 
 **Failure modes are treated as independent.** Correlated failures would raise the
 joint probability, so independence understates risk. That is the right direction

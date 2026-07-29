@@ -6,6 +6,7 @@ from fastapi import Depends, Header, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.agents.composer import ComposerAgent
+from app.agents.estimate import EstimationAgent
 from app.agents.evidence import EvidenceAgent
 from app.agents.extraction import ExtractionAgent
 from app.agents.identify import IdentificationAgent
@@ -117,6 +118,7 @@ def get_orchestrator(
             identification=IdentificationAgent(llm, cache),
             evidence=EvidenceAgent(llm, search),
             extraction=ExtractionAgent(llm),
+            estimation=EstimationAgent(llm),
             composer=ComposerAgent(llm),
             rag=RagStore(session, embeddings),
             session=session,

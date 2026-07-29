@@ -21,6 +21,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.agents.composer import ComposerAgent
 from app.agents.confidence import ConfidenceReport, SourceSignal, score_confidence
+from app.agents.estimate import EstimationAgent
 from app.agents.evidence import EvidenceAgent, to_document_inputs
 from app.agents.extraction import ExtractionAgent
 from app.agents.guard import validate_query
@@ -76,6 +77,7 @@ class OrchestratorDeps:
     identification: IdentificationAgent
     evidence: EvidenceAgent
     extraction: ExtractionAgent
+    estimation: EstimationAgent
     composer: ComposerAgent
     rag: RagStore
     session: AsyncSession
@@ -140,7 +142,7 @@ class AnalysisOrchestrator:
 
             yield _running("verify")
             if not verified:
-                warnings.append("No public repair sources passed the quality checks.")
+                warnings.append("Žiadny verejný zdroj o opravách neprešiel kontrolou kvality.")
             yield _done("verify", f"prijatých {counted(len(verified), *SOURCES)}")
 
             yield _running("retrieve")
@@ -154,8 +156,8 @@ class AnalysisOrchestrator:
             yield _done("retrieve", f"{counted(len(chunks), *PASSAGES)}")
         else:
             warnings.append(
-                "No web search provider is configured, so this answer has no public "
-                "sources behind it."
+                "Nie je nastavený žiadny vyhľadávač, takže za touto odpoveďou "
+                "nestoja verejné zdroje."
             )
             product = await repository.upsert_product(deps.session, identity)
             yield _done("search", "vyhľadávanie nedostupné")
@@ -167,6 +169,15 @@ class AnalysisOrchestrator:
         extraction = await deps.extraction.extract(
             identity=identity, chunks=chunks, currency=request.currency
         )
+        if not extraction.failure_modes:
+            # Nothing usable was read off the retrieved pages. Rather than leave
+            # the customer with no answer at all, fall back to what typically goes
+            # wrong with this class of product — every figure of which is stamped
+            # as an estimate and capped to low confidence downstream.
+            estimated = await deps.estimation.estimate(identity=identity, currency=request.currency)
+            if estimated.failure_modes:
+                logger.info("estimation_fallback_used", modes=len(estimated.failure_modes))
+                extraction = estimated
         warnings.extend(extraction.warnings)
         assumptions.extend(extraction.assumptions)
         yield _done("extract", f"{counted(len(extraction.failure_modes), *FAULTS)}")
@@ -363,7 +374,7 @@ def _build_result(
     ]
 
     if confidence.evidence_level is EvidenceLevel.NONE and not warnings:
-        warnings.append("No repair evidence was available, so no estimate is shown.")
+        warnings.append("Nemali sme k dispozícii žiadne podklady, preto nezobrazujeme odhad.")
 
     return AnalysisResult(
         id=str(uuid.uuid4()),

@@ -18,6 +18,9 @@ from app.schemas.common import ConfidenceBand, EvidenceLevel, ValueOrigin
 
 MIN_SOURCES_FOR_FULL_CREDIT = 6
 MIN_DOMAINS_FOR_FULL_CREDIT = 4
+# Below the 0.45 boundary of ConfidenceBand.MEDIUM, so a modelled answer always
+# reads as low confidence in the interface.
+MAX_MODELLED_CONFIDENCE = 0.35
 
 
 @dataclass(slots=True)
@@ -40,8 +43,14 @@ class ConfidenceReport:
 def determine_evidence_level(
     failure_modes: list[ExtractedFailureMode], sources: list[SourceSignal]
 ) -> EvidenceLevel:
-    if not sources or not failure_modes:
+    if not failure_modes:
         return EvidenceLevel.NONE
+
+    if not sources:
+        # A value cannot come from a source when nothing was retrieved, so such a
+        # claim is not evidence. Only a self-declared class estimate survives here.
+        all_estimated = all(mode.cost.origin is ValueOrigin.ESTIMATED for mode in failure_modes)
+        return EvidenceLevel.MODELLED if all_estimated else EvidenceLevel.NONE
 
     sourced_costs = sum(1 for mode in failure_modes if mode.cost.origin is ValueOrigin.SOURCED)
     sourced_probabilities = sum(
@@ -51,8 +60,10 @@ def determine_evidence_level(
 
     if sourced_costs >= 2 and high_quality_domains >= 2 and sourced_probabilities >= 1:
         return EvidenceLevel.VERIFIED
-    if sourced_costs >= 1 or high_quality_domains >= 1:
+    if sourced_costs >= 1:
         return EvidenceLevel.PARTIAL
+    # Pages were retrieved but no price in them supports a figure, so whatever is
+    # being reported rests on the model rather than on what was read.
     return EvidenceLevel.MODELLED
 
 
@@ -91,7 +102,13 @@ def score_confidence(
         + 0.15 * identification
         + 0.20 * groundedness
     )
-    score = round(max(0.0, min(1.0, score)), 3)
+    score = max(0.0, min(1.0, score))
+    if evidence_level is EvidenceLevel.MODELLED:
+        # Nothing here was read off a page. However many pages were retrieved and
+        # however well the product was identified, the answer is the model's own
+        # estimate, so it must never present as anything but low confidence.
+        score = min(score, MAX_MODELLED_CONFIDENCE)
+    score = round(score, 3)
 
     drivers: list[str] = []
     uncertainties: list[str] = []
@@ -116,7 +133,12 @@ def score_confidence(
     elif identification < 0.5:
         uncertainties.append("Presný model produktu sa nepodarilo potvrdiť.")
 
-    if groundedness >= 0.7:
+    if evidence_level is EvidenceLevel.MODELLED:
+        uncertainties.append(
+            "Žiadne z týchto čísel nepochádza zo zdroja o tomto modeli — sú to odhady "
+            "pre podobné produkty."
+        )
+    elif groundedness >= 0.7:
         drivers.append("Ceny opráv pochádzajú z citovaných zdrojov, nie z predpokladov.")
     else:
         uncertainties.append("Niektoré ceny opráv sú modelované odhady, nie zverejnené čísla.")

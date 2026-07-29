@@ -37,6 +37,7 @@ end to end, is tested, and handles its failure cases.
 - [x] Risk scoring, confidence scoring, verdict thresholds
 - [x] Response composer with a deterministic fallback narrative
 - [x] Numeric verification of generated wording against the computed analysis
+- [x] Class-level estimate when no evidence is retrievable, labelled and capped
 - [x] Streaming orchestrator emitting per-stage progress over SSE
 - [x] Analysis UI: verdict, economics, failure modes, sources, assumptions
 - [x] Two custom SVG charts with hover, keyboard focus and table views
@@ -47,7 +48,7 @@ end to end, is tested, and handles its failure cases.
 
 ## Phase 5 — Production ✅
 
-- [x] 234 backend tests: business logic, guards, providers, full HTTP surface
+- [x] 248 backend tests: business logic, guards, providers, full HTTP surface
 - [x] End-to-end browser run against the real API and the production web build
 - [x] Lint, format and type checks clean (ruff, mypy, eslint, tsc)
 - [x] GitHub Actions: backend, migrations against real pgvector, frontend, images
