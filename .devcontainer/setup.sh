@@ -18,29 +18,15 @@ else
   fi
 fi
 
-# The forwarded hostnames change with every codespace, so these are rewritten
-# on each run even when .env was kept.
+# The browser only ever talks to the web app, which forwards /api itself, so
+# the single forwarded port is all that has to be allowed. The hostname changes
+# with every codespace, so it is rewritten on each run even when .env was kept.
 if [ -n "${CODESPACE_NAME:-}" ]; then
   domain="${GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN:-app.github.dev}"
   web="https://${CODESPACE_NAME}-3000.${domain}"
-  api="https://${CODESPACE_NAME}-8000.${domain}"
 
-  sed -i "s|^NEXT_PUBLIC_API_URL=.*|NEXT_PUBLIC_API_URL=${api}|" .env
   sed -i "s|^CORS_ORIGINS=.*|CORS_ORIGINS=${web}|" .env
-  echo "→ Codespace URLs written to .env"
-  echo "     web  ${web}"
-  echo "     api  ${api}"
-
-  # The web app calls the API from the browser, so that port must be reachable
-  # without the codespace's own auth cookie.
-  if command -v gh >/dev/null 2>&1; then
-    if gh codespace ports visibility 8000:public -c "$CODESPACE_NAME" >/dev/null 2>&1; then
-      echo "→ Port 8000 set to public"
-    else
-      echo "→ Could not set port 8000 public automatically."
-      echo "  Do it in the Ports tab: right-click port 8000 → Port Visibility → Public."
-    fi
-  fi
+  echo "→ Codespace detected; the app will be at ${web}"
 fi
 
 cat <<'EOF'

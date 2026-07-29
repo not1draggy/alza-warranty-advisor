@@ -29,16 +29,20 @@ make up                       # docker compose up --build -d
 ### In the browser, with nothing installed
 
 *Code → Codespaces → Create codespace* runs the whole stack on GitHub's
-infrastructure. `.devcontainer/setup.sh` prepares `.env` on first boot: it
-generates a signing key, derives the forwarded HTTPS URLs the browser will
-actually use, and makes port 8000 reachable. Fill in your provider keys, then
-`docker compose up --build -d` and open the forwarded port 3000.
+infrastructure. `.devcontainer/setup.sh` prepares `.env` on first boot. Fill in
+your provider keys, run `docker compose up --build -d`, and open the forwarded
+port 3000.
 
-The URL derivation is not optional there — `NEXT_PUBLIC_API_URL` is inlined at
-image build time, and in a codespace the browser reaches the API on
-`https://<name>-8000.app.github.dev` rather than on localhost, so a
-localhost default would leave the web app calling an address that does not
-exist and failing CORS on top of it.
+### How the browser reaches the API
+
+The web app calls the API on **its own origin**, at `/api/v1/…`, and the Next.js
+server forwards those requests over the private network between the containers
+(`next.config.mjs`). Only port 3000 has to be reachable, no cross-origin request
+is involved, and the image carries no environment-specific address — which is
+what makes the same build work locally, in a codespace, and in production.
+
+Set `NEXT_PUBLIC_API_URL` only if you want the browser to call an API on a
+different host; that origin then has to appear in `CORS_ORIGINS`.
 
 * Web app — <http://localhost:3000>
 * API docs — <http://localhost:8000/docs>

@@ -7,9 +7,11 @@ import type {
   HistoryPage,
 } from "@/lib/types";
 
-const BASE_URL = (
-  process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000"
-).replace(/\/$/, "");
+// Empty by default, so requests stay on the origin serving the page and are
+// forwarded to the API by the rewrite in next.config.mjs. Set
+// NEXT_PUBLIC_API_URL only to call an API on a different host, which then has
+// to allow this origin in CORS_ORIGINS.
+const BASE_URL = (process.env.NEXT_PUBLIC_API_URL ?? "").replace(/\/$/, "");
 
 const API = `${BASE_URL}/api/v1`;
 

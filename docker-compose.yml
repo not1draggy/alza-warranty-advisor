@@ -74,7 +74,10 @@ services:
     build:
       context: ./frontend
       args:
-        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:8000}
+        # The API is reached over the private network between the containers,
+        # so the browser never needs a second public port.
+        API_PROXY_TARGET: http://api:8000
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-}
     environment:
       NODE_ENV: production
     depends_on:

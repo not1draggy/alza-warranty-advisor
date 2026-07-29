@@ -8,8 +8,16 @@ WORKDIR /app
 ENV NEXT_TELEMETRY_DISABLED=1
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
-# The API base URL is inlined at build time because it is a NEXT_PUBLIC_ variable.
-ARG NEXT_PUBLIC_API_URL=http://localhost:8000
+# Both are read while the bundle and the routes manifest are generated, so they
+# have to be present at build time rather than at start-up.
+#
+# API_PROXY_TARGET is where this server forwards /api to — a private network
+# address that is the same in every deployment.
+ARG API_PROXY_TARGET=http://localhost:8000
+ENV API_PROXY_TARGET=$API_PROXY_TARGET
+# NEXT_PUBLIC_API_URL stays empty unless the API is on a different public host;
+# empty keeps the browser on this origin and lets the proxy do the work.
+ARG NEXT_PUBLIC_API_URL=
 ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
 RUN npm run build
 
