@@ -155,6 +155,20 @@ async def persist_failure_modes(
     await session.flush()
 
 
+async def sources_by_url(session: AsyncSession, urls: list[str]) -> dict[str, Source]:
+    """Resolve stored sources for a set of URLs.
+
+    Retrieval can surface passages from documents ingested by an earlier run, so
+    citations must be resolved against the whole store rather than only against
+    the sources written during this request.
+    """
+    unique = list(dict.fromkeys(urls))
+    if not unique:
+        return {}
+    records = (await session.scalars(sa.select(Source).where(Source.url.in_(unique)))).all()
+    return {record.url: record for record in records}
+
+
 async def find_fresh_analysis(session: AsyncSession, key: str) -> Analysis | None:
     return await session.scalar(
         sa.select(Analysis)

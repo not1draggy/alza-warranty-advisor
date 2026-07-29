@@ -44,16 +44,20 @@ async def search_products(
     q: str = Query(min_length=2, max_length=120),
     limit: int = Query(default=10, ge=1, le=50),
 ) -> list[ProductSummary]:
-    pattern = f"%{q.lower()}%"
+    # Escape LIKE metacharacters so a query of "%" does not match everything.
+    escaped = q.lower().replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
+    pattern = f"%{escaped}%"
     rows = (
         await session.execute(
             sa.select(Product, Manufacturer)
             .outerjoin(Manufacturer, Manufacturer.id == Product.manufacturer_id)
             .where(
                 sa.or_(
-                    sa.func.lower(Product.display_name).like(pattern),
-                    sa.func.lower(Product.lookup_key).like(pattern),
-                    sa.func.lower(sa.func.coalesce(Product.model_number, "")).like(pattern),
+                    sa.func.lower(Product.display_name).like(pattern, escape="\\"),
+                    sa.func.lower(Product.lookup_key).like(pattern, escape="\\"),
+                    sa.func.lower(sa.func.coalesce(Product.model_number, "")).like(
+                        pattern, escape="\\"
+                    ),
                 )
             )
             .order_by(Product.identification_confidence.desc())

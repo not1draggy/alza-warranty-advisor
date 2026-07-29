@@ -1,0 +1,129 @@
+"use client";
+
+import {
+  AlertTriangle,
+  CircleHelp,
+  MinusCircle,
+  ThumbsUp,
+  XCircle,
+} from "lucide-react";
+
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent } from "@/components/ui/card";
+import { money, percent, VERDICT_COPY } from "@/lib/format";
+import type { AnalysisResult } from "@/lib/types";
+import { cn } from "@/lib/utils";
+
+const ICONS = {
+  recommended: ThumbsUp,
+  neutral: MinusCircle,
+  not_recommended: XCircle,
+  insufficient_evidence: CircleHelp,
+} as const;
+
+const TONE_STYLES = {
+  positive: "border-positive/40 bg-positive/[0.07] text-positive",
+  caution: "border-caution/40 bg-caution/[0.07] text-caution",
+  negative: "border-destructive/40 bg-destructive/[0.07] text-destructive",
+  neutral: "border-border bg-muted/40 text-muted-foreground",
+} as const;
+
+export function VerdictCard({ result }: { result: AnalysisResult }) {
+  const { decision, headline, summary, reasons } = result.verdict;
+  const copy = VERDICT_COPY[decision];
+  const Icon = ICONS[decision];
+  const { economics } = result;
+
+  return (
+    <Card className="overflow-hidden">
+      <div className={cn("border-b px-5 py-4 sm:px-6", TONE_STYLES[copy.tone])}>
+        <div className="flex items-center gap-2 text-sm font-semibold">
+          {/* Icon plus label: the verdict never depends on colour alone. */}
+          <Icon className="size-4" aria-hidden />
+          {copy.label}
+        </div>
+      </div>
+
+      <CardContent className="pt-5">
+        <h2 className="text-balance text-2xl font-semibold tracking-tight sm:text-3xl">
+          {headline}
+        </h2>
+        <p className="mt-3 text-pretty text-base leading-relaxed text-muted-foreground">
+          {summary}
+        </p>
+
+        {decision !== "insufficient_evidence" && (
+          <dl className="mt-6 grid gap-4 border-t border-border pt-5 sm:grid-cols-3">
+            <Stat
+              label="Chance of a repair"
+              value={percent(economics.failure_probability)}
+              hint={`over ${result.warranty_years} year${result.warranty_years === 1 ? "" : "s"}`}
+            />
+            <Stat
+              label="Expected repair spend"
+              value={money(economics.expected_repair_cost, economics.currency)}
+              hint="probability-weighted"
+            />
+            <Stat
+              label="Extension price"
+              value={money(economics.warranty_price, economics.currency)}
+              hint={
+                economics.net_value >= 0
+                  ? `${money(economics.net_value, economics.currency)} in your favour`
+                  : `${money(Math.abs(economics.net_value), economics.currency)} against you`
+              }
+            />
+          </dl>
+        )}
+
+        {reasons.length > 0 && (
+          <ul className="mt-6 space-y-2 border-t border-border pt-5">
+            {reasons.map((reason) => (
+              <li key={reason} className="flex gap-2.5 text-sm text-muted-foreground">
+                <span aria-hidden className="mt-[7px] size-1.5 shrink-0 rounded-full bg-data" />
+                <span className="text-pretty">{reason}</span>
+              </li>
+            ))}
+          </ul>
+        )}
+
+        {result.warnings.length > 0 && (
+          <div className="mt-6 space-y-2 rounded-md border border-caution/40 bg-caution/[0.06] p-4">
+            {result.warnings.map((warning) => (
+              <p key={warning} className="flex gap-2.5 text-sm text-caution">
+                <AlertTriangle className="mt-0.5 size-4 shrink-0" aria-hidden />
+                <span className="text-pretty">{warning}</span>
+              </p>
+            ))}
+          </div>
+        )}
+
+        {result.from_cache && (
+          <Badge variant="outline" className="mt-5">
+            Reused from a recent verified analysis
+          </Badge>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+function Stat({
+  label,
+  value,
+  hint,
+}: {
+  label: string;
+  value: string;
+  hint: string;
+}) {
+  return (
+    <div>
+      <dt className="text-xs uppercase tracking-wide text-muted-foreground">
+        {label}
+      </dt>
+      <dd className="mt-1 text-xl font-semibold tabular-nums">{value}</dd>
+      <p className="text-xs text-muted-foreground">{hint}</p>
+    </div>
+  );
+}

@@ -13,6 +13,10 @@ from app.core.logging import get_logger
 
 logger = get_logger(__name__)
 
+# Ceiling on the in-process fallback map so a Redis outage cannot turn into a
+# slow memory leak.
+_LOCAL_WINDOW_MAX_KEYS = 50_000
+
 
 @dataclass(slots=True)
 class RateLimitDecision:
@@ -28,6 +32,8 @@ class _LocalWindow:
 
     def hit(self, key: str, limit: int, window: int) -> RateLimitDecision:
         now = time.monotonic()
+        if len(self.counts) > _LOCAL_WINDOW_MAX_KEYS:
+            self._evict_expired(now)
         count, expires_at = self.counts.get(key, (0, now + window))
         if now >= expires_at:
             count, expires_at = 0, now + window
@@ -41,6 +47,16 @@ class _LocalWindow:
             retry_after_seconds=retry_after,
         )
 
+    def _evict_expired(self, now: float) -> None:
+        """Keep the fallback map bounded; entries past their window are dead."""
+        expired = [key for key, (_, expires_at) in self.counts.items() if now >= expires_at]
+        for key in expired:
+            del self.counts[key]
+        if len(self.counts) > _LOCAL_WINDOW_MAX_KEYS:
+            # Still oversized: the process is under a key-space flood. Drop
+            # everything rather than grow without bound.
+            self.counts.clear()
+
 
 class RateLimiter:
     def __init__(self, redis: Redis | None, *, limit_per_minute: int, burst: int) -> None:
@@ -49,7 +65,7 @@ class RateLimiter:
         self._window = 60
         self._local = _LocalWindow()
 
-    async def check(self, identity: str, scope: str = "default") -> RateLimitDecision:
+    async def check(self, identity: str, *, scope: str = "default") -> RateLimitDecision:
         key = f"ratelimit:{scope}:{identity}"
         if self._redis is None:
             return self._local.hit(key, self._limit, self._window)

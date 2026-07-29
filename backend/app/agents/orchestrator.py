@@ -130,7 +130,6 @@ class AnalysisOrchestrator:
 
         # --- search ---------------------------------------------------------
         yield _running("search")
-        sources_stored: list[Source] = []
         chunks: list[RetrievedChunk] = []
 
         if deps.evidence.search_configured:
@@ -145,9 +144,7 @@ class AnalysisOrchestrator:
 
             yield _running("retrieve")
             product = await repository.upsert_product(deps.session, identity)
-            sources_stored = await deps.rag.ingest(
-                to_document_inputs(verified), product_id=product.id
-            )
+            await deps.rag.ingest(to_document_inputs(verified), product_id=product.id)
             chunks = await deps.rag.retrieve(
                 f"{identity.search_name} repair cost common failures",
                 product_id=product.id,
@@ -215,7 +212,16 @@ class AnalysisOrchestrator:
         yield _done("compose")
 
         # --- assemble and persist ------------------------------------------
-        chunk_sources = _map_chunk_sources(chunks, sources_stored)
+        # Resolve citations against the whole store: retrieval can surface
+        # passages from documents ingested by an earlier run.
+        stored_sources = await repository.sources_by_url(
+            deps.session, [chunk.source_url for chunk in chunks]
+        )
+        chunk_sources = {
+            index: stored_sources[chunk.source_url]
+            for index, chunk in enumerate(chunks)
+            if chunk.source_url in stored_sources
+        }
         result = _build_result(
             request=request,
             identity=identity,
@@ -228,6 +234,7 @@ class AnalysisOrchestrator:
             narrative_reasons=narrative.reasons or reasons,
             risk_score=score,
             chunks=chunks,
+            chunk_sources=chunk_sources,
             warnings=warnings,
             assumptions=assumptions,
         )
@@ -287,15 +294,6 @@ def _unique_by_domain(chunks: list[RetrievedChunk]) -> list[RetrievedChunk]:
     return unique
 
 
-def _map_chunk_sources(chunks: list[RetrievedChunk], sources: list[Source]) -> dict[int, Source]:
-    by_url = {source.url: source for source in sources}
-    return {
-        index: by_url[chunk.source_url]
-        for index, chunk in enumerate(chunks)
-        if chunk.source_url in by_url
-    }
-
-
 def _citation_from_chunk(chunk: RetrievedChunk, source_id: str) -> Citation:
     return Citation(
         source_id=source_id,
@@ -321,12 +319,16 @@ def _build_result(
     narrative_reasons: list[str],
     risk_score: float,
     chunks: list[RetrievedChunk],
+    chunk_sources: dict[int, Source],
     warnings: list[str],
     assumptions: list[str],
 ) -> AnalysisResult:
     citations_by_index: dict[int, Citation] = {}
     for index, chunk in enumerate(chunks):
-        citations_by_index[index] = _citation_from_chunk(chunk, source_id=f"chunk-{index}")
+        source = chunk_sources.get(index)
+        citations_by_index[index] = _citation_from_chunk(
+            chunk, source_id=source.id if source else chunk.source_url
+        )
 
     unique_sources: dict[str, Citation] = {}
     for citation in citations_by_index.values():

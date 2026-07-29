@@ -147,7 +147,7 @@ def _groundedness(failure_modes: list[ExtractedFailureMode]) -> float:
     if not failure_modes:
         return 0.0
     total = len(failure_modes) * 2
-    grounded = 0
+    grounded = 0.0
     for mode in failure_modes:
         if mode.cost.origin is ValueOrigin.SOURCED:
             grounded += 1

@@ -61,8 +61,10 @@ def client_identity(request: Request) -> str:
     return request.client.host if request.client else "anonymous"
 
 
-async def enforce_rate_limit(request: Request, limiter: RateLimiterDep, scope: str = "api") -> None:
-    decision = await limiter.check(client_identity(request), scope)
+async def enforce_rate_limit(request: Request, limiter: RateLimiterDep) -> None:
+    # The scope is fixed deliberately: exposing it as a parameter would let a
+    # caller pick a fresh bucket per request and walk straight past the limit.
+    decision = await limiter.check(client_identity(request), scope="api")
     if not decision.allowed:
         raise RateLimited(
             "Too many requests. Please wait a moment before trying again.",
