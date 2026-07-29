@@ -14,8 +14,11 @@ built and how it was verified.
 
 - [x] **AI agents complete** — identification, query planning, evidence
       verification, repair extraction, probability estimation, confidence
-      scoring, citation handling, response composer, security guard, cache
-      manager and the orchestrator that sequences them.
+      scoring, citation handling, response composer, narrative verification,
+      security guard, cache manager and the orchestrator that sequences them.
+      The verdict headline is derived from the computed decision, and every
+      figure in the generated wording is checked against the analysis before it
+      is shown.
 
 - [x] **search complete** — Tavily, SerpAPI and Google Programmable Search
       behind one interface, fanned out concurrently, de-duplicated by canonical
@@ -42,10 +45,12 @@ built and how it was verified.
       PostgreSQL + pgvector, frontend lint/typecheck/build, and both Docker
       images built with layer caching.
 
-- [x] **tests pass** — 196 tests, 84% statement coverage. Probability and cost
-      mathematics, confidence scoring, source classification, the injection
-      guard, extraction clamping, search de-duplication, provider failover, the
+- [x] **tests pass** — 218 tests. Probability and cost mathematics, confidence
+      scoring, source classification, the injection guard, extraction clamping,
+      narrative verification, search de-duplication, provider failover, the
       orchestrator's degraded paths, and the full HTTP surface including SSE.
+      Additionally verified by running the real stack and driving the real UI in
+      a headless browser end to end.
 
 - [x] **production ready** — health and readiness probes, graceful degradation
       when any provider is missing, request timeouts and retries, connection

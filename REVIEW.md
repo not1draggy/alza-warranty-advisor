@@ -61,6 +61,45 @@ runs clean and is enforced in CI.
 The form was remounted via `key`, resetting the price and term the customer had
 already typed. It now syncs the product field only.
 
+## Found by running it, not by testing it
+
+The suite was green when the following three were still broken. Booting the real
+stack and driving the real UI in a browser is what surfaced them.
+
+### 8. `CORS_ORIGINS` crashed startup (deployment-blocking)
+
+`cors_origins` was typed as `list[str]`. pydantic-settings JSON-decodes
+list-typed fields **inside the environment source**, before any validator runs, so
+the comma-separated value shipped in `.env.example` and `docker-compose.yml`
+raised `SettingsError` and the API never started. Tests never hit it because they
+never set the variable.
+
+It is now read as a string and parsed into a list by a property that accepts both
+the comma form and a JSON array.
+
+### 9. The wording could contradict the numbers
+
+The composed narrative claimed "well above the 66 EUR the extension costs" while
+the panel beside it read €49 expected against a €66 extension — and the headline
+said "Worth buying" while the computed verdict was `not_recommended`. The prompt
+forbids inventing figures, but nothing enforced it.
+
+Two changes:
+
+* **The headline is no longer written by the model.** It is derived from the
+  verdict, so the recommendation and the wording cannot disagree by construction.
+* **Every figure in the summary and reasons is verified** against the values the
+  pipeline computed (`agents/verification.py`). Any monetary amount or percentage
+  that does not match one, within rounding tolerance, causes the whole narrative
+  to be discarded in favour of the deterministic template. Bare integers are
+  ignored — "3 years" is not a claim about money or risk.
+
+### 10. The sticky header cut the verdict in half
+
+`scrollIntoView` on the result section ignored the sticky header, hiding the
+verdict chip and the top of the headline — the two things the customer is meant
+to read first. Fixed with `scroll-mt-20`.
+
 ## Deliberate decisions worth stating
 
 **No fabricated baselines.** An earlier design had category-level default failure

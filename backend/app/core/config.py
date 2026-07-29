@@ -1,15 +1,20 @@
 """Application configuration, loaded from environment variables only."""
 
+import json
 from functools import lru_cache
 from typing import Literal
 
-from pydantic import Field, SecretStr, computed_field, field_validator
+from pydantic import Field, SecretStr, computed_field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(
-        env_file=".env", env_file_encoding="utf-8", extra="ignore", case_sensitive=False
+        env_file=".env",
+        env_file_encoding="utf-8",
+        extra="ignore",
+        case_sensitive=False,
+        populate_by_name=True,
     )
 
     # --- Core ---------------------------------------------------------------
@@ -17,7 +22,10 @@ class Settings(BaseSettings):
     log_level: str = "INFO"
     secret_key: SecretStr = SecretStr("insecure-development-key")
     access_token_ttl_minutes: int = 60 * 24 * 7
-    cors_origins: list[str] = Field(default_factory=lambda: ["http://localhost:3000"])
+    # Kept as a string: pydantic-settings JSON-decodes list-typed fields inside the
+    # environment source, before any validator runs, so a plain comma-separated
+    # value would fail to load. Parsed into a list by `cors_origins` below.
+    cors_origins_raw: str = Field(default="http://localhost:3000", alias="CORS_ORIGINS")
 
     api_prefix: str = "/api/v1"
     project_name: str = "Warranty Advisor AI"
@@ -59,12 +67,17 @@ class Settings(BaseSettings):
     rate_limit_per_minute: int = 30
     rate_limit_burst: int = 10
 
-    @field_validator("cors_origins", mode="before")
-    @classmethod
-    def _split_origins(cls, value: object) -> object:
-        if isinstance(value, str):
-            return [origin.strip() for origin in value.split(",") if origin.strip()]
-        return value
+    @property
+    def cors_origins(self) -> list[str]:
+        """Allowed browser origins, from a comma-separated or JSON-array value."""
+        raw = self.cors_origins_raw.strip()
+        if raw.startswith("["):
+            try:
+                parsed = json.loads(raw)
+            except json.JSONDecodeError:
+                parsed = []
+            return [str(origin).strip() for origin in parsed if str(origin).strip()]
+        return [origin.strip() for origin in raw.split(",") if origin.strip()]
 
     @computed_field  # type: ignore[prop-decorator]
     @property

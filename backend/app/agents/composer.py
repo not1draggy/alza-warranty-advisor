@@ -10,6 +10,7 @@ from app.agents.confidence import ConfidenceReport
 from app.agents.prompts import COMPOSER_SCHEMA, COMPOSER_SYSTEM
 from app.agents.risk import Economics
 from app.agents.types import ComposedNarrative, ExtractedFailureMode, ProductIdentity
+from app.agents.verification import verify_narrative
 from app.core.errors import ProviderUnavailable
 from app.core.logging import get_logger
 from app.schemas.common import ConfidenceBand, Verdict
@@ -67,10 +68,25 @@ class ComposerAgent:
             return fallback
 
         narrative = ComposedNarrative.model_validate(payload)
-        if not narrative.headline.strip() or not narrative.summary.strip():
+        if not narrative.summary.strip():
             return fallback
+
+        # The headline is never taken from the model: it is derived from the
+        # decision, so the wording cannot contradict the recommendation.
+        narrative.headline = _HEADLINES[verdict]
         if not narrative.reasons:
             narrative.reasons = fallback.reasons
+
+        # Every figure in the wording must be one the pipeline computed.
+        check = verify_narrative(
+            " ".join([narrative.summary, *narrative.reasons]),
+            economics=economics,
+            failure_modes=failure_modes,
+            confidence=confidence.score,
+        )
+        if not check.ok:
+            logger.warning("composer_rejected_unsupported_figures", figures=check.unsupported)
+            return fallback
         return narrative
 
 

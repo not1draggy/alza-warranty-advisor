@@ -17,6 +17,7 @@ export const metadata: Metadata = {
   description:
     "Find out whether an extended warranty is worth buying, based on what repairs actually cost.",
   robots: { index: false },
+  icons: { icon: [{ url: "/favicon.svg", type: "image/svg+xml" }] },
 };
 
 export const viewport: Viewport = {

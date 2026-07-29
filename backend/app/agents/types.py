@@ -69,6 +69,8 @@ class ExtractionResult(BaseModel):
 
 
 class ComposedNarrative(BaseModel):
-    headline: str
+    # Derived from the verdict rather than written by the model, so the wording
+    # can never contradict the recommendation.
+    headline: str = ""
     summary: str
     reasons: list[str] = Field(default_factory=list)

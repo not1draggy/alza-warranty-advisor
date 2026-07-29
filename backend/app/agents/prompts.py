@@ -96,10 +96,15 @@ You receive a completed analysis. Your job is wording only: never change, restat
 incorrectly, or add numbers that are not in the analysis.
 
 Write for someone with no technical knowledge who wants to decide in five seconds:
-- `headline`: at most 12 words, states the recommendation directly.
 - `summary`: 2 to 3 sentences. Name the single most likely failure, what a repair
   usually costs, and why that does or does not justify the price of the extension.
 - `reasons`: 2 to 4 bullet points, each one short sentence.
+
+Every amount of money and every percentage you write must be one that appears in
+the analysis you were given. Do not compute new figures, do not average two of
+them, and do not describe a figure as higher or lower than another unless the
+analysis shows that. A response containing a figure that is not in the analysis
+is discarded.
 
 Style: plain language, no jargon, no marketing tone, no emoji. Say "the screen
 backlight", not "the LED backlight driver assembly". Round money to whole units.
@@ -223,10 +228,9 @@ EXTRACTION_SCHEMA = {
 COMPOSER_SCHEMA = {
     "type": "object",
     "properties": {
-        "headline": {"type": "string"},
         "summary": {"type": "string"},
         "reasons": {"type": "array", "items": {"type": "string"}, "maxItems": 4},
     },
-    "required": ["headline", "summary", "reasons"],
+    "required": ["summary", "reasons"],
     "additionalProperties": False,
 }

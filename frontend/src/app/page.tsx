@@ -127,7 +127,8 @@ export default function HomePage() {
       {analysis.result && (
         <section
           ref={resultRef}
-          className="container max-w-5xl animate-fade-up pb-20"
+          // scroll-mt clears the sticky header when the result is scrolled into view.
+          className="container max-w-5xl scroll-mt-20 animate-fade-up pb-20"
           aria-live="polite"
         >
           <div className="space-y-6">

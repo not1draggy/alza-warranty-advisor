@@ -76,14 +76,10 @@ DEFAULT_EXTRACTION = {
 }
 
 DEFAULT_NARRATIVE = {
-    "headline": "Worth buying — repairs usually cost more",
     "summary": "Roughly one in five of these sets needs a repair in the three years after "
     "the manufacturer's warranty ends, and the usual fault is the screen backlight at "
-    "about 280 EUR. That is well above the 66 EUR the extension costs.",
-    "reasons": [
-        "The most common fault costs around 280 EUR to fix.",
-        "The extension pays for itself if the chance of a repair is above 23%.",
-    ],
+    "about 280 EUR.",
+    "reasons": ["The most common fault costs around 280 EUR to fix."],
 }
 
 
@@ -107,7 +103,7 @@ class FakeLLM(LLMProvider):
             return self._overrides.get("queries", DEFAULT_QUERIES)
         if "failure_modes" in properties:
             return self._overrides.get("extraction", DEFAULT_EXTRACTION)
-        if "headline" in properties:
+        if "summary" in properties:
             return self._overrides.get("narrative", DEFAULT_NARRATIVE)
         return self._overrides.get("identity", DEFAULT_IDENTITY)
 

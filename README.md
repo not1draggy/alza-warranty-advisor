@@ -63,7 +63,7 @@ that it cannot produce an estimate rather than inventing one; `GET
 | **Retrieve** | Documents are chunked, embedded and stored once; retrieval is pgvector cosine similarity with a keyword fallback | `services/rag.py` |
 | **Extract** | Failure modes with annual probability, cost range, difficulty, parts availability, and the evidence indices that support them | `agents/extraction.py` |
 | **Quantify** | Probability and cost mathematics, risk score, confidence score, verdict | `agents/risk.py`, `agents/confidence.py` |
-| **Compose** | Plain-language wording over numbers it is not allowed to change | `agents/composer.py` |
+| **Compose** | Plain-language wording over numbers it is not allowed to change; the headline comes from the verdict and every figure is verified before display | `agents/composer.py`, `agents/verification.py` |
 
 The streaming endpoint emits each stage as a Server-Sent Event, so the UI shows
 real progress instead of a spinner.
@@ -98,6 +98,11 @@ overstates the case for buying the warranty.
   reordered rather than trusted blindly, zero-cost entries are dropped.
 * With no usable evidence the verdict is `insufficient_evidence` and no cost
   figures are shown at all.
+* The verdict headline is derived from the computed decision, so the wording can
+  never contradict the recommendation.
+* Every monetary amount and percentage in the generated wording is matched against
+  the values the pipeline computed; an unsupported figure discards the whole
+  narrative in favour of a deterministic one (`agents/verification.py`).
 
 ---
 
@@ -113,7 +118,7 @@ backend/
     schemas/      request/response contracts
     services/     LLM router, search router, embeddings, RAG store, cache, repository
   alembic/        migrations (pgvector extension + HNSW index)
-  tests/          196 tests
+  tests/          218 tests
 frontend/
   src/app/        routes: analysis, history
   src/components/ verdict, detail panels, SVG charts, form, progress
