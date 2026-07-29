@@ -287,6 +287,22 @@ Never stop after writing documentation.
 
 Never stop after generating architecture.
 
+Never measure progress by files created.
+
+Measure progress only by working user-visible functionality.
+
+A feature is complete only if:
+
+- it works,
+- it is tested,
+- it has proper error handling,
+- it has loading states,
+- it has empty states,
+- it has responsive design,
+- it is production-ready.
+
+Otherwise the feature is considered incomplete.
+
 Never stop after generating code.
 
 Continue improving until the repository is production-ready.
