@@ -133,6 +133,7 @@ usable a deterministic template built from the same figures takes over.
   the retrieved sources happen to describe.
 * The frontend has no automated tests — it is verified by type checking, linting
   and a production build. A browser test runner is on the roadmap.
-* Docker image builds could not be executed in the build sandbox: the egress
-  policy returns 403 for Docker Hub's blob CDN. `docker compose config`
-  validates, and CI builds both images.
+* Docker image builds could not be executed in the development sandbox: the
+  egress policy returns 403 for Docker Hub's blob CDN. `docker compose config`
+  validates locally, and CI builds both images — that job is green, so the
+  Dockerfiles are verified, just not from inside the sandbox.

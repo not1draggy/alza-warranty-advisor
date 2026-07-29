@@ -36,9 +36,9 @@ built and how it was verified.
 - [x] **docker works** — Dockerfiles for both services (multi-stage, unprivileged
       users, health checks) and a Compose file wiring pgvector, Redis, the API
       and the web app with health-gated startup and migrations on boot.
-      `docker compose config` validates. *Image builds could not be executed in
-      this sandbox: the egress policy returns 403 for Docker Hub's blob CDN
-      (`production.cloudfront.docker.com`). CI builds both images.*
+      `docker compose config` validates and both images build successfully in
+      CI. (They could not be built in the development sandbox, whose egress
+      policy returns 403 for Docker Hub's blob CDN, so CI is what verifies them.)
 
 - [x] **GitHub Actions work** — four jobs: backend lint/types/tests with a
       coverage floor, migrations applied and rolled back against real
