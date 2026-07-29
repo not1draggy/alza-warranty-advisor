@@ -26,6 +26,20 @@ cp .env.example .env          # add ANTHROPIC_API_KEY and TAVILY_API_KEY
 make up                       # docker compose up --build -d
 ```
 
+### In the browser, with nothing installed
+
+*Code → Codespaces → Create codespace* runs the whole stack on GitHub's
+infrastructure. `.devcontainer/setup.sh` prepares `.env` on first boot: it
+generates a signing key, derives the forwarded HTTPS URLs the browser will
+actually use, and makes port 8000 reachable. Fill in your provider keys, then
+`docker compose up --build -d` and open the forwarded port 3000.
+
+The URL derivation is not optional there — `NEXT_PUBLIC_API_URL` is inlined at
+image build time, and in a codespace the browser reaches the API on
+`https://<name>-8000.app.github.dev` rather than on localhost, so a
+localhost default would leave the web app calling an address that does not
+exist and failing CORS on top of it.
+
 * Web app — <http://localhost:3000>
 * API docs — <http://localhost:8000/docs>
 * Health — <http://localhost:8000/api/v1/health>
