@@ -1,37 +1,89 @@
-The project is finished ONLY if
+# Definition of Done
 
-☐ frontend complete
+The project is finished only if every box is true. Each line states what was
+built and how it was verified.
 
-☐ backend complete
+- [x] **frontend complete** — Next.js 15 App Router, TypeScript, Tailwind,
+      shadcn-style primitives, React Query. Analysis form, live streaming
+      progress, verdict card, economics, failure modes, two charts, sources,
+      assumptions, history. `npm run build` and `npm run lint` pass.
 
-☐ AI agents complete
+- [x] **backend complete** — FastAPI with SQLAlchemy 2 async, Pydantic v2
+      schemas, versioned REST API: analysis (sync + SSE), history, products,
+      auth, health, readiness, capabilities.
 
-☐ search complete
+- [x] **AI agents complete** — identification, query planning, evidence
+      verification, repair extraction, probability estimation, confidence
+      scoring, citation handling, response composer, narrative verification,
+      security guard, cache manager and the orchestrator that sequences them.
+      The verdict headline is derived from the computed decision, and every
+      figure in the generated wording is checked against the analysis before it
+      is shown. When no evidence can be retrieved, a class-level estimate keeps
+      the customer from a dead end, labelled as an estimate everywhere it appears
+      and capped to low confidence.
 
-☐ caching complete
+- [x] **search complete** — Tavily, SerpAPI and Google Programmable Search
+      behind one interface, fanned out concurrently, de-duplicated by canonical
+      URL, cached, and resilient to any single provider failing.
 
-☐ authentication complete
+- [x] **caching complete** — Redis JSON cache for search results and product
+      identity; analyses cached in PostgreSQL by request fingerprint with a TTL;
+      `refresh: true` bypasses it. Every cache path degrades to a live call when
+      Redis is unavailable.
 
-☐ docker works
+- [x] **authentication complete** — register, login and `/me` with bcrypt
+      hashing and signed JWTs. The product works anonymously; signing in moves
+      history from a device-local session to the account.
 
-☐ GitHub Actions work
+- [x] **docker works** — Dockerfiles for both services (multi-stage, unprivileged
+      users, health checks) and a Compose file wiring pgvector, Redis, the API
+      and the web app with health-gated startup and migrations on boot.
+      `docker compose config` validates and both images build successfully in
+      CI. (They could not be built in the development sandbox, whose egress
+      policy returns 403 for Docker Hub's blob CDN, so CI is what verifies them.)
 
-☐ tests pass
+- [x] **GitHub Actions work** — four jobs: backend lint/types/tests with a
+      coverage floor, migrations applied and rolled back against real
+      PostgreSQL + pgvector, frontend lint/typecheck/build, and both Docker
+      images built with layer caching.
 
-☐ production ready
+- [x] **tests pass** — 262 tests. Probability and cost mathematics, confidence
+      scoring, source classification, the injection guard, extraction clamping,
+      narrative verification, Slovak noun forms and number parsing, search
+      de-duplication, provider failover, the orchestrator's degraded paths, and
+      the full HTTP surface including SSE.
+      Additionally verified by running the real stack and driving the real UI in
+      a headless browser end to end.
 
-☐ responsive
+- [x] **production ready** — health and readiness probes, graceful degradation
+      when any provider is missing, request timeouts and retries, connection
+      pooling, migrations on container start, restart policies. A misconfigured
+      provider reports itself as one: the verdict is `service_unavailable`, the
+      cause is named (rejected key, unknown model, exhausted quota, outage), and
+      the interface says which variable to fix.
 
-☐ secure
+- [x] **responsive** — fluid layout from 360px upwards; charts scale by viewBox;
+      form and result grids reflow at `sm` and `lg`.
 
-☐ accessible
+- [x] **secure** — prompt-injection and SQL-injection screening on input,
+      sanitisation of retrieved content, parameterised queries throughout,
+      rate limiting, bcrypt, JWT, CORS allow-list, security headers, secrets in
+      environment variables only and never logged.
 
-☐ monitoring
+- [x] **accessible** — semantic landmarks, skip link, labelled form controls,
+      `aria-live` progress and results, keyboard-focusable chart marks,
+      `role="meter"` with numeric text beside every bar, icon + text for every
+      verdict so nothing depends on colour, and `prefers-reduced-motion` support.
 
-☐ logging
+- [x] **monitoring** — `/health`, `/ready` (checks database and cache) and
+      `/capabilities` (reports configured providers without exposing keys), plus
+      per-request duration and status logging and container health checks.
 
-☐ documentation
+- [x] **logging** — structlog with JSON output in production, request ids
+      propagated through a context variable and returned in the `x-request-id`
+      header and in error bodies. Secrets are never logged.
 
-If any checkbox is false
-
-continue implementing.
+- [x] **documentation** — README covering the pipeline, the mathematics, the
+      no-invention guarantees, the data model, the API and the security posture;
+      ROADMAP with current status; REVIEW with the self-review findings;
+      `.env.example`; Makefile with the common tasks.

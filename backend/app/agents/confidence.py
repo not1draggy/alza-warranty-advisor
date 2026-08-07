@@ -1,0 +1,180 @@
+"""Confidence scoring.
+
+Confidence answers "how much should the customer trust this number?" and is built
+from five observable signals rather than asked of the language model:
+
+  1. how many sources survived verification
+  2. how many independent domains they came from
+  3. the average quality of those sources
+  4. how well the product itself was identified
+  5. how much of the answer is sourced versus modelled
+"""
+
+from dataclasses import dataclass
+from statistics import mean
+
+from app.agents.types import ExtractedFailureMode
+from app.schemas.common import ConfidenceBand, EvidenceLevel, ValueOrigin
+
+MIN_SOURCES_FOR_FULL_CREDIT = 6
+MIN_DOMAINS_FOR_FULL_CREDIT = 4
+# Below the 0.45 boundary of ConfidenceBand.MEDIUM, so a modelled answer always
+# reads as low confidence in the interface.
+MAX_MODELLED_CONFIDENCE = 0.35
+
+
+@dataclass(slots=True)
+class SourceSignal:
+    domain: str
+    quality_score: float
+
+
+@dataclass(slots=True)
+class ConfidenceReport:
+    score: float
+    band: ConfidenceBand
+    evidence_level: EvidenceLevel
+    source_count: int
+    independent_domains: int
+    drivers: list[str]
+    uncertainties: list[str]
+
+
+def determine_evidence_level(
+    failure_modes: list[ExtractedFailureMode], sources: list[SourceSignal]
+) -> EvidenceLevel:
+    if not failure_modes:
+        return EvidenceLevel.NONE
+
+    if not sources:
+        # A value cannot come from a source when nothing was retrieved, so such a
+        # claim is not evidence. Only a self-declared class estimate survives here.
+        all_estimated = all(mode.cost.origin is ValueOrigin.ESTIMATED for mode in failure_modes)
+        return EvidenceLevel.MODELLED if all_estimated else EvidenceLevel.NONE
+
+    sourced_costs = sum(1 for mode in failure_modes if mode.cost.origin is ValueOrigin.SOURCED)
+    sourced_probabilities = sum(
+        1 for mode in failure_modes if mode.probability_origin is ValueOrigin.SOURCED
+    )
+    high_quality_domains = len({s.domain for s in sources if s.quality_score >= 0.7})
+
+    if sourced_costs >= 2 and high_quality_domains >= 2 and sourced_probabilities >= 1:
+        return EvidenceLevel.VERIFIED
+    if sourced_costs >= 1:
+        return EvidenceLevel.PARTIAL
+    # Pages were retrieved but no price in them supports a figure, so whatever is
+    # being reported rests on the model rather than on what was read.
+    return EvidenceLevel.MODELLED
+
+
+def score_confidence(
+    *,
+    failure_modes: list[ExtractedFailureMode],
+    sources: list[SourceSignal],
+    identification_confidence: float,
+) -> ConfidenceReport:
+    evidence_level = determine_evidence_level(failure_modes, sources)
+    domains = {source.domain for source in sources}
+    source_count = len(sources)
+    domain_count = len(domains)
+
+    if evidence_level is EvidenceLevel.NONE:
+        return ConfidenceReport(
+            score=0.0,
+            band=ConfidenceBand.LOW,
+            evidence_level=evidence_level,
+            source_count=source_count,
+            independent_domains=domain_count,
+            drivers=[],
+            uncertainties=["Pre tento produkt sme nenašli použiteľné verejné informácie."],
+        )
+
+    volume = min(1.0, source_count / MIN_SOURCES_FOR_FULL_CREDIT)
+    independence = min(1.0, domain_count / MIN_DOMAINS_FOR_FULL_CREDIT)
+    quality = mean(source.quality_score for source in sources) if sources else 0.0
+    identification = max(0.0, min(1.0, identification_confidence))
+    groundedness = _groundedness(failure_modes)
+
+    score = (
+        0.20 * volume
+        + 0.20 * independence
+        + 0.25 * quality
+        + 0.15 * identification
+        + 0.20 * groundedness
+    )
+    score = max(0.0, min(1.0, score))
+    if evidence_level is EvidenceLevel.MODELLED:
+        # Nothing here was read off a page. However many pages were retrieved and
+        # however well the product was identified, the answer is the model's own
+        # estimate, so it must never present as anything but low confidence.
+        score = min(score, MAX_MODELLED_CONFIDENCE)
+    score = round(score, 3)
+
+    drivers: list[str] = []
+    uncertainties: list[str] = []
+
+    if source_count >= MIN_SOURCES_FOR_FULL_CREDIT:
+        drivers.append(f"Navzájom nezávislých zdrojov: {source_count}.")
+    else:
+        uncertainties.append(f"Použiteľných zdrojov sme našli len {source_count}.")
+
+    if domain_count >= MIN_DOMAINS_FOR_FULL_CREDIT:
+        drivers.append(f"Podklady pochádzajú z {domain_count} rôznych webstránok.")
+    elif domain_count <= 1:
+        uncertainties.append("Všetky podklady pochádzajú z jedinej webstránky.")
+
+    if quality >= 0.7:
+        drivers.append("Väčšina zdrojov sú výrobcovia alebo profesionálne servisy.")
+    elif quality < 0.5:
+        uncertainties.append("Zdroje sú prevažne diskusie používateľov, nie oficiálne údaje.")
+
+    if identification >= 0.8:
+        drivers.append("Presný model produktu sme určili s vysokou istotou.")
+    elif identification < 0.5:
+        uncertainties.append("Presný model produktu sa nepodarilo potvrdiť.")
+
+    if evidence_level is EvidenceLevel.MODELLED:
+        uncertainties.append(
+            "Žiadne z týchto čísel nepochádza zo zdroja o tomto modeli — sú to odhady "
+            "pre podobné produkty."
+        )
+    elif groundedness >= 0.7:
+        drivers.append("Ceny opráv pochádzajú z citovaných zdrojov, nie z predpokladov.")
+    else:
+        uncertainties.append("Niektoré ceny opráv sú modelované odhady, nie zverejnené čísla.")
+
+    return ConfidenceReport(
+        score=score,
+        band=confidence_band(score),
+        evidence_level=evidence_level,
+        source_count=source_count,
+        independent_domains=domain_count,
+        drivers=drivers,
+        uncertainties=uncertainties,
+    )
+
+
+def confidence_band(score: float) -> ConfidenceBand:
+    if score >= 0.7:
+        return ConfidenceBand.HIGH
+    if score >= 0.45:
+        return ConfidenceBand.MEDIUM
+    return ConfidenceBand.LOW
+
+
+def _groundedness(failure_modes: list[ExtractedFailureMode]) -> float:
+    """Share of displayed values that trace back to a source rather than an assumption."""
+    if not failure_modes:
+        return 0.0
+    total = len(failure_modes) * 2
+    grounded = 0.0
+    for mode in failure_modes:
+        if mode.cost.origin is ValueOrigin.SOURCED:
+            grounded += 1
+        elif mode.cost.origin is ValueOrigin.DERIVED:
+            grounded += 0.5
+        if mode.probability_origin is ValueOrigin.SOURCED:
+            grounded += 1
+        elif mode.probability_origin is ValueOrigin.DERIVED:
+            grounded += 0.5
+    return grounded / total
