@@ -117,6 +117,11 @@ overstates the case for buying the warranty.
   automatically (`agents/extraction.py`).
 * Absurd outputs are clamped: annual probability caps at 0.35, cost ranges are
   reordered rather than trusted blindly, zero-cost entries are dropped.
+* A provider failure is never reported as missing evidence. A rejected key, an
+  unknown model name and an outage each get their own reason
+  (`core/errors.py: ProviderReason`), the verdict becomes `service_unavailable`
+  rather than `insufficient_evidence`, and the exact provider message is shown so
+  it can be acted on.
 * With no usable evidence the answer falls back to an estimate for the product
   *class* (`agents/estimate.py`). Every value it produces is `estimated`, carries
   no citation, drives the evidence level to `modelled`, is capped below the
@@ -144,7 +149,7 @@ backend/
     schemas/      request/response contracts
     services/     LLM router, search router, embeddings, RAG store, cache, repository
   alembic/        migrations (pgvector extension + HNSW index)
-  tests/          248 tests
+  tests/          262 tests
 frontend/
   src/app/        routes: analysis, history
   src/components/ verdict, detail panels, SVG charts, form, progress

@@ -6,7 +6,7 @@ from typing import Any
 from openai import APIConnectionError, APIStatusError, AsyncOpenAI, RateLimitError
 
 from app.core.config import Settings
-from app.core.errors import ProviderUnavailable
+from app.core.errors import ProviderReason, ProviderUnavailable
 from app.core.logging import get_logger
 from app.services.llm.base import LLMProvider
 
@@ -41,7 +41,10 @@ class OpenAIProvider(LLMProvider):
         cacheable_system: bool = True,
     ) -> dict[str, Any]:
         if self._client is None:
-            raise ProviderUnavailable("OPENAI_API_KEY is not configured.")
+            raise ProviderUnavailable(
+                "OPENAI_API_KEY is not configured.",
+                reason=ProviderReason.NOT_CONFIGURED,
+            )
         try:
             response = await self._client.chat.completions.create(
                 model=self._model,
@@ -56,18 +59,27 @@ class OpenAIProvider(LLMProvider):
                 },
             )
         except RateLimitError as exc:
-            raise ProviderUnavailable("OpenAI is rate limited; try again shortly.") from exc
+            raise ProviderUnavailable(
+                "OpenAI is rate limited; try again shortly.",
+                reason=ProviderReason.RATE_LIMITED,
+            ) from exc
         except (APIConnectionError, APIStatusError) as exc:
             logger.warning("openai_request_failed", error=str(exc))
-            raise ProviderUnavailable("OpenAI could not be reached.") from exc
+            raise ProviderUnavailable(
+                "OpenAI could not be reached.", reason=ProviderReason.UNREACHABLE
+            ) from exc
 
         content = response.choices[0].message.content or ""
         try:
             parsed = json.loads(content)
         except json.JSONDecodeError as exc:
-            raise ProviderUnavailable("OpenAI returned malformed JSON.") from exc
+            raise ProviderUnavailable(
+                "OpenAI returned malformed JSON.", reason=ProviderReason.BAD_RESPONSE
+            ) from exc
         if not isinstance(parsed, dict):
-            raise ProviderUnavailable("OpenAI returned a non-object JSON payload.")
+            raise ProviderUnavailable(
+                "OpenAI returned a non-object JSON payload.", reason=ProviderReason.BAD_RESPONSE
+            )
         return parsed
 
     async def complete_text(
@@ -80,7 +92,10 @@ class OpenAIProvider(LLMProvider):
         cacheable_system: bool = True,
     ) -> str:
         if self._client is None:
-            raise ProviderUnavailable("OPENAI_API_KEY is not configured.")
+            raise ProviderUnavailable(
+                "OPENAI_API_KEY is not configured.",
+                reason=ProviderReason.NOT_CONFIGURED,
+            )
         try:
             response = await self._client.chat.completions.create(
                 model=self._model,
@@ -91,8 +106,13 @@ class OpenAIProvider(LLMProvider):
                 ],
             )
         except RateLimitError as exc:
-            raise ProviderUnavailable("OpenAI is rate limited; try again shortly.") from exc
+            raise ProviderUnavailable(
+                "OpenAI is rate limited; try again shortly.",
+                reason=ProviderReason.RATE_LIMITED,
+            ) from exc
         except (APIConnectionError, APIStatusError) as exc:
             logger.warning("openai_request_failed", error=str(exc))
-            raise ProviderUnavailable("OpenAI could not be reached.") from exc
+            raise ProviderUnavailable(
+                "OpenAI could not be reached.", reason=ProviderReason.UNREACHABLE
+            ) from exc
         return response.choices[0].message.content or ""

@@ -16,7 +16,7 @@ from anthropic.types import (
 )
 
 from app.core.config import Settings
-from app.core.errors import ProviderUnavailable
+from app.core.errors import ProviderReason, ProviderUnavailable
 from app.core.logging import get_logger
 from app.services.llm.base import LLMProvider
 
@@ -58,7 +58,10 @@ class AnthropicProvider(LLMProvider):
         cacheable_system: bool = True,
     ) -> dict[str, Any]:
         if self._client is None:
-            raise ProviderUnavailable("ANTHROPIC_API_KEY is not configured.")
+            raise ProviderUnavailable(
+                "ANTHROPIC_API_KEY is not configured.",
+                reason=ProviderReason.NOT_CONFIGURED,
+            )
 
         try:
             response = await self._client.messages.create(
@@ -69,23 +72,40 @@ class AnthropicProvider(LLMProvider):
                 messages=[{"role": "user", "content": user}],
             )
         except RateLimitError as exc:
-            raise ProviderUnavailable("Claude is rate limited; try again shortly.") from exc
-        except (APIConnectionError, APIStatusError) as exc:
-            logger.warning("anthropic_request_failed", error=str(exc))
-            raise ProviderUnavailable("Claude could not be reached.") from exc
+            raise ProviderUnavailable(
+                "Claude is rate limited; try again shortly.",
+                reason=ProviderReason.RATE_LIMITED,
+            ) from exc
+        except APIStatusError as exc:
+            logger.warning("anthropic_request_failed", status=exc.status_code, error=str(exc))
+            raise _status_error(exc, self._model) from exc
+        except APIConnectionError as exc:
+            logger.warning("anthropic_unreachable", error=str(exc))
+            raise ProviderUnavailable(
+                "Claude could not be reached.", reason=ProviderReason.UNREACHABLE
+            ) from exc
 
         if response.stop_reason == "refusal":
-            raise ProviderUnavailable("Claude declined to answer this request.")
+            raise ProviderUnavailable(
+                "Claude declined to answer this request.",
+                reason=ProviderReason.BAD_RESPONSE,
+            )
 
         text = _first_text(response.content)
         if not text:
-            raise ProviderUnavailable("Claude returned an empty response.")
+            raise ProviderUnavailable(
+                "Claude returned an empty response.", reason=ProviderReason.BAD_RESPONSE
+            )
         try:
             parsed = json.loads(text)
         except json.JSONDecodeError as exc:
-            raise ProviderUnavailable("Claude returned malformed JSON.") from exc
+            raise ProviderUnavailable(
+                "Claude returned malformed JSON.", reason=ProviderReason.BAD_RESPONSE
+            ) from exc
         if not isinstance(parsed, dict):
-            raise ProviderUnavailable("Claude returned a non-object JSON payload.")
+            raise ProviderUnavailable(
+                "Claude returned a non-object JSON payload.", reason=ProviderReason.BAD_RESPONSE
+            )
         return parsed
 
     async def complete_text(
@@ -98,7 +118,10 @@ class AnthropicProvider(LLMProvider):
         cacheable_system: bool = True,
     ) -> str:
         if self._client is None:
-            raise ProviderUnavailable("ANTHROPIC_API_KEY is not configured.")
+            raise ProviderUnavailable(
+                "ANTHROPIC_API_KEY is not configured.",
+                reason=ProviderReason.NOT_CONFIGURED,
+            )
 
         try:
             async with self._client.messages.stream(
@@ -110,13 +133,24 @@ class AnthropicProvider(LLMProvider):
             ) as stream:
                 message = await stream.get_final_message()
         except RateLimitError as exc:
-            raise ProviderUnavailable("Claude is rate limited; try again shortly.") from exc
-        except (APIConnectionError, APIStatusError) as exc:
-            logger.warning("anthropic_request_failed", error=str(exc))
-            raise ProviderUnavailable("Claude could not be reached.") from exc
+            raise ProviderUnavailable(
+                "Claude is rate limited; try again shortly.",
+                reason=ProviderReason.RATE_LIMITED,
+            ) from exc
+        except APIStatusError as exc:
+            logger.warning("anthropic_request_failed", status=exc.status_code, error=str(exc))
+            raise _status_error(exc, self._model) from exc
+        except APIConnectionError as exc:
+            logger.warning("anthropic_unreachable", error=str(exc))
+            raise ProviderUnavailable(
+                "Claude could not be reached.", reason=ProviderReason.UNREACHABLE
+            ) from exc
 
         if message.stop_reason == "refusal":
-            raise ProviderUnavailable("Claude declined to answer this request.")
+            raise ProviderUnavailable(
+                "Claude declined to answer this request.",
+                reason=ProviderReason.BAD_RESPONSE,
+            )
         return _first_text(message.content)
 
 
@@ -133,3 +167,38 @@ def _first_text(blocks: list[Any]) -> str:
         if getattr(block, "type", None) == "text":
             return str(block.text)
     return ""
+
+
+def _status_error(exc: APIStatusError, model: str) -> ProviderUnavailable:
+    """Turn an HTTP status from the API into something an operator can act on.
+
+    A rejected key, an unknown model name and an exhausted balance all arrive as
+    plain HTTP errors. Reporting them as "could not be reached" sends whoever is
+    debugging to the network when the fix is in the environment file.
+    """
+    status_code = exc.status_code
+    if status_code in (401, 403):
+        return ProviderUnavailable(
+            "ANTHROPIC_API_KEY was rejected by the Anthropic API. Check that the key "
+            "is complete, current, and belongs to an active account.",
+            reason=ProviderReason.REJECTED_CREDENTIALS,
+        )
+    if status_code == 404:
+        return ProviderUnavailable(
+            f"The Anthropic API does not offer a model named '{model}' to this key. "
+            "Set ANTHROPIC_MODEL to a model your account can use.",
+            reason=ProviderReason.MODEL_UNAVAILABLE,
+        )
+    if status_code == 402:
+        return ProviderUnavailable(
+            "The Anthropic account has no remaining credit.",
+            reason=ProviderReason.QUOTA_EXHAUSTED,
+        )
+    if status_code == 429:
+        return ProviderUnavailable(
+            "Claude is rate limited; try again shortly.",
+            reason=ProviderReason.RATE_LIMITED,
+        )
+    return ProviderUnavailable(
+        f"Claude returned HTTP {status_code}.", reason=ProviderReason.UNREACHABLE
+    )

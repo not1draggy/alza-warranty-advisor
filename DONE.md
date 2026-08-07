@@ -47,7 +47,7 @@ built and how it was verified.
       PostgreSQL + pgvector, frontend lint/typecheck/build, and both Docker
       images built with layer caching.
 
-- [x] **tests pass** — 248 tests. Probability and cost mathematics, confidence
+- [x] **tests pass** — 262 tests. Probability and cost mathematics, confidence
       scoring, source classification, the injection guard, extraction clamping,
       narrative verification, Slovak noun forms and number parsing, search
       de-duplication, provider failover, the orchestrator's degraded paths, and
@@ -57,7 +57,10 @@ built and how it was verified.
 
 - [x] **production ready** — health and readiness probes, graceful degradation
       when any provider is missing, request timeouts and retries, connection
-      pooling, migrations on container start, restart policies.
+      pooling, migrations on container start, restart policies. A misconfigured
+      provider reports itself as one: the verdict is `service_unavailable`, the
+      cause is named (rejected key, unknown model, exhausted quota, outage), and
+      the interface says which variable to fix.
 
 - [x] **responsive** — fluid layout from 360px upwards; charts scale by viewBox;
       form and result grids reflow at `sm` and `lg`.

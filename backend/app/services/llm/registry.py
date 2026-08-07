@@ -3,7 +3,7 @@
 from typing import Any
 
 from app.core.config import Settings
-from app.core.errors import ProviderUnavailable
+from app.core.errors import ProviderReason, ProviderUnavailable
 from app.core.logging import get_logger
 from app.services.llm.anthropic_client import AnthropicProvider
 from app.services.llm.base import LLMProvider, UnavailableLLM
@@ -36,14 +36,26 @@ class LLMRouter(LLMProvider):
     async def _dispatch(self, method: str, **kwargs: Any) -> Any:
         if not self._providers:
             return await getattr(self._fallback, method)(**kwargs)
-        last_error: ProviderUnavailable | None = None
+        failures: list[ProviderUnavailable] = []
         for provider in self._providers:
             try:
                 return await getattr(provider, method)(**kwargs)
             except ProviderUnavailable as exc:
-                logger.warning("llm_provider_failed", provider=provider.name, error=str(exc))
-                last_error = exc
-        raise last_error or ProviderUnavailable(_NO_PROVIDER)
+                logger.warning(
+                    "llm_provider_failed",
+                    provider=provider.name,
+                    reason=exc.reason.value,
+                    error=str(exc),
+                )
+                failures.append(exc)
+        # A misconfigured key is the useful thing to report even if a later
+        # provider failed for a duller reason.
+        for failure in failures:
+            if failure.reason.is_configuration:
+                raise failure
+        if failures:
+            raise failures[-1]
+        raise ProviderUnavailable(_NO_PROVIDER, reason=ProviderReason.NOT_CONFIGURED)
 
     async def complete_json(self, **kwargs: Any) -> dict[str, Any]:
         return await self._dispatch("complete_json", **kwargs)

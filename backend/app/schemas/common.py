@@ -13,7 +13,11 @@ class Verdict(StrEnum):
     RECOMMENDED = "recommended"
     NEUTRAL = "neutral"
     NOT_RECOMMENDED = "not_recommended"
+    # We looked and found nothing usable.
     INSUFFICIENT_EVIDENCE = "insufficient_evidence"
+    # We could not look at all: the analysis model is missing or misconfigured.
+    # Distinct from the above because only one of them is the customer's problem.
+    SERVICE_UNAVAILABLE = "service_unavailable"
 
 
 class EvidenceLevel(StrEnum):

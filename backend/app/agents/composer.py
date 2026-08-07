@@ -19,11 +19,15 @@ from app.services.llm.base import LLMProvider
 
 logger = get_logger(__name__)
 
+# Verdicts that describe why there is no analysis, so there is nothing to reword.
+_NO_ANALYSIS = frozenset({Verdict.INSUFFICIENT_EVIDENCE, Verdict.SERVICE_UNAVAILABLE})
+
 _HEADLINES: dict[Verdict, str] = {
     Verdict.RECOMMENDED: "Oplatí sa — opravy zvyčajne stoja viac",
     Verdict.NEUTRAL: "Tesné — záleží na tom, koľko rizika znesiete",
     Verdict.NOT_RECOMMENDED: "Skôr sa neoplatí — opravy bývajú lacnejšie",
     Verdict.INSUFFICIENT_EVIDENCE: "Nemáme dosť podkladov na jednoznačnú odpoveď",
+    Verdict.SERVICE_UNAVAILABLE: "Analýzu sa teraz nedá spustiť",
 }
 
 
@@ -51,7 +55,7 @@ class ComposerAgent:
             failure_modes=failure_modes,
             years=years,
         )
-        if verdict is Verdict.INSUFFICIENT_EVIDENCE:
+        if verdict in _NO_ANALYSIS:
             return fallback
 
         try:
@@ -103,6 +107,18 @@ def build_fallback_narrative(
 ) -> ComposedNarrative:
     currency = economics.currency
     headline = _HEADLINES[verdict]
+
+    if verdict is Verdict.SERVICE_UNAVAILABLE:
+        return ComposedNarrative(
+            headline=headline,
+            summary=(
+                "Analýza sa nedokončila, pretože jazykový model neodpovedal. "
+                "Nie je to tým, že by o tomto produkte neboli informácie — služba "
+                "je nesprávne nastavená alebo dočasne nedostupná. Skúste to znova "
+                "o chvíľu; ak to trvá, ide o nastavenie API kľúča."
+            ),
+            reasons=reasons,
+        )
 
     if verdict is Verdict.INSUFFICIENT_EVIDENCE:
         summary = (

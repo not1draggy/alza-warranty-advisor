@@ -2,7 +2,8 @@ export type Verdict =
   | "recommended"
   | "neutral"
   | "not_recommended"
-  | "insufficient_evidence";
+  | "insufficient_evidence"
+  | "service_unavailable";
 
 export type RiskBand = "low" | "moderate" | "high" | "severe";
 export type ConfidenceBand = "high" | "medium" | "low";

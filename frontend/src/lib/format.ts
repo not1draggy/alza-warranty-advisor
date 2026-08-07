@@ -61,6 +61,7 @@ export const VERDICT_COPY: Record<
   neutral: { label: "Tesné", tone: "caution" },
   not_recommended: { label: "Skôr nie", tone: "negative" },
   insufficient_evidence: { label: "Málo podkladov", tone: "neutral" },
+  service_unavailable: { label: "Služba nedostupná", tone: "negative" },
 };
 
 export const RISK_COPY: Record<RiskBand, string> = {

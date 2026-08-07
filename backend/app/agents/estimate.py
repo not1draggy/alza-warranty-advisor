@@ -49,8 +49,8 @@ class EstimationAgent:
                 effort="high",
             )
         except ProviderUnavailable as exc:
-            logger.warning("estimation_unavailable", error=str(exc))
-            return ExtractionResult(evidence_sufficient=False)
+            logger.warning("estimation_unavailable", reason=exc.reason.value, error=str(exc))
+            return ExtractionResult(evidence_sufficient=False, provider_error=str(exc))
 
         modes = _to_failure_modes(payload.get("failure_modes", []), currency)
         if not modes:

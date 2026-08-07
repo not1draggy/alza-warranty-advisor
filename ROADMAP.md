@@ -48,11 +48,12 @@ end to end, is tested, and handles its failure cases.
 
 ## Phase 5 — Production ✅
 
-- [x] 248 backend tests: business logic, guards, providers, full HTTP surface
+- [x] 262 backend tests: business logic, guards, providers, full HTTP surface
 - [x] End-to-end browser run against the real API and the production web build
 - [x] Lint, format and type checks clean (ruff, mypy, eslint, tsc)
 - [x] GitHub Actions: backend, migrations against real pgvector, frontend, images
 - [x] Health, readiness and capability endpoints
+- [x] Provider faults reported by cause, distinct from missing evidence
 - [x] Security headers, CORS allow-list, unprivileged containers
 
 ## Next

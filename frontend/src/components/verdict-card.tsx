@@ -4,6 +4,7 @@ import {
   AlertTriangle,
   CircleHelp,
   MinusCircle,
+  ServerCrash,
   ThumbsUp,
   XCircle,
 } from "lucide-react";
@@ -19,6 +20,7 @@ const ICONS = {
   neutral: MinusCircle,
   not_recommended: XCircle,
   insufficient_evidence: CircleHelp,
+  service_unavailable: ServerCrash,
 } as const;
 
 const TONE_STYLES = {
@@ -67,7 +69,31 @@ export function VerdictCard({ result }: { result: AnalysisResult }) {
           {summary}
         </p>
 
-        {decision !== "insufficient_evidence" && (
+        {decision === "service_unavailable" && (
+          <div className="mt-5 rounded-md border border-destructive/40 bg-destructive/[0.06] p-4 text-sm">
+            <p className="font-medium text-destructive">Ako to opraviť</p>
+            <ol className="mt-2 list-decimal space-y-1 pl-5 text-muted-foreground">
+              <li>
+                Skontrolujte, že v <code className="text-foreground">.env</code> je
+                vyplnený <code className="text-foreground">ANTHROPIC_API_KEY</code>.
+              </li>
+              <li>
+                Po zmene <code className="text-foreground">.env</code> reštartujte API:{" "}
+                <code className="text-foreground">
+                  docker compose up -d --force-recreate api
+                </code>
+                .
+              </li>
+              <li>
+                Presnú príčinu vypíše{" "}
+                <code className="text-foreground">docker compose logs api</code> a
+                zobrazí sa aj vo varovaní nižšie.
+              </li>
+            </ol>
+          </div>
+        )}
+
+        {decision !== "insufficient_evidence" && decision !== "service_unavailable" && (
           <dl className="mt-6 grid gap-4 border-t border-border pt-5 sm:grid-cols-3">
             <Stat
               label="Šanca na opravu"

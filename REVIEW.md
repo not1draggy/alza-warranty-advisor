@@ -100,6 +100,23 @@ Two changes:
 verdict chip and the top of the headline — the two things the customer is meant
 to read first. Fixed with `scroll-mt-20`.
 
+### 11. A broken API key was reported as a missing product
+
+Every HTTP status from the Anthropic SDK — 401 for a rejected key, 404 for a
+model name the account cannot use, 402 for exhausted credit — was caught in one
+`except` and re-raised as "Claude could not be reached". The analysis then ended
+at `insufficient_evidence`, whose headline reads *"Nemáme dosť podkladov"*.
+
+So a configuration fault presented as a fact about the product: the customer was
+told nothing is known about their television, and whoever had to fix it was
+pointed at the network. Searching worked the whole time, which made it look like
+the product simply had no repair history.
+
+Each status now maps to its own `ProviderReason`, the router surfaces a
+configuration fault ahead of a duller failure from a second provider, and the
+verdict is `service_unavailable` — a separate state from having looked and found
+nothing. The card names the variable to set and shows the provider's own message.
+
 ## Deliberate decisions worth stating
 
 **A labelled estimate rather than a dead end.** When nothing usable is retrieved,

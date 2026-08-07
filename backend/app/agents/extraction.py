@@ -65,11 +65,11 @@ class ExtractionAgent:
                 effort="high",
             )
         except ProviderUnavailable as exc:
-            logger.warning("extraction_unavailable", error=str(exc))
-            return ExtractionResult(
-                evidence_sufficient=False,
-                warnings=["Analytický model je nedostupný, odhad opravy sa preto nedal vytvoriť."],
-            )
+            # Carried rather than phrased as a warning here: the orchestrator is
+            # the only place that knows whether the estimate fallback also failed,
+            # and so whether this is the reason the customer got no answer.
+            logger.warning("extraction_unavailable", reason=exc.reason.value, error=str(exc))
+            return ExtractionResult(evidence_sufficient=False, provider_error=str(exc))
 
         result = ExtractionResult.model_validate(payload)
         result.failure_modes = _normalise(result.failure_modes, currency, len(chunks))

@@ -8,7 +8,7 @@ than fabricating content.
 from abc import ABC, abstractmethod
 from typing import Any
 
-from app.core.errors import ProviderUnavailable
+from app.core.errors import ProviderReason, ProviderUnavailable
 
 
 class LLMProvider(ABC):
@@ -57,7 +57,7 @@ class UnavailableLLM(LLMProvider):
         return False
 
     async def complete_json(self, **_: Any) -> dict[str, Any]:
-        raise ProviderUnavailable(self._reason)
+        raise ProviderUnavailable(self._reason, reason=ProviderReason.NOT_CONFIGURED)
 
     async def complete_text(self, **_: Any) -> str:
-        raise ProviderUnavailable(self._reason)
+        raise ProviderUnavailable(self._reason, reason=ProviderReason.NOT_CONFIGURED)

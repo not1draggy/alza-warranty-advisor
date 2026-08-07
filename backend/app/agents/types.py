@@ -66,6 +66,9 @@ class ExtractionResult(BaseModel):
     assumptions: list[str] = Field(default_factory=list)
     warnings: list[str] = Field(default_factory=list)
     evidence_sufficient: bool = False
+    # Set when the model itself could not be called. An empty result then means
+    # "we could not look", not "we looked and found nothing".
+    provider_error: str | None = None
 
 
 class ComposedNarrative(BaseModel):

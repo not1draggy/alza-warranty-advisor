@@ -1,5 +1,7 @@
 """Typed application errors and the handlers that render them as JSON."""
 
+from enum import StrEnum
+
 from fastapi import FastAPI, Request, status
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
@@ -59,10 +61,47 @@ class RateLimited(AppError):
     message = "Too many requests. Please slow down."
 
 
+class ProviderReason(StrEnum):
+    """Why a provider call could not be made.
+
+    A rejected key and an unreachable host both stop the analysis, but only one
+    of them is fixed by editing the environment. Collapsing them into one
+    message sends the operator looking in the wrong place.
+    """
+
+    NOT_CONFIGURED = "not_configured"  # no key set at all
+    REJECTED_CREDENTIALS = "rejected_credentials"  # the key was refused
+    MODEL_UNAVAILABLE = "model_unavailable"  # the key works, the model name does not
+    QUOTA_EXHAUSTED = "quota_exhausted"  # billing or credit limit
+    RATE_LIMITED = "rate_limited"  # transient, retry later
+    UNREACHABLE = "unreachable"  # network or upstream outage
+    BAD_RESPONSE = "bad_response"  # reached it, could not use the answer
+
+    @property
+    def is_configuration(self) -> bool:
+        """True when an operator has to change something for this to work."""
+        return self in {
+            ProviderReason.NOT_CONFIGURED,
+            ProviderReason.REJECTED_CREDENTIALS,
+            ProviderReason.MODEL_UNAVAILABLE,
+            ProviderReason.QUOTA_EXHAUSTED,
+        }
+
+
 class ProviderUnavailable(AppError):
     status_code = status.HTTP_503_SERVICE_UNAVAILABLE
     code = "provider_unavailable"
     message = "An upstream provider is not configured or not reachable."
+
+    def __init__(
+        self,
+        message: str | None = None,
+        *,
+        reason: ProviderReason = ProviderReason.UNREACHABLE,
+        details: dict | None = None,
+    ) -> None:
+        super().__init__(message, details=details)
+        self.reason = reason
 
 
 def _payload(code: str, message: str, details: dict | None = None) -> dict:

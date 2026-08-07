@@ -9,10 +9,12 @@ from app.agents.evidence import EvidenceAgent
 from app.agents.extraction import ExtractionAgent
 from app.agents.identify import IdentificationAgent
 from app.agents.orchestrator import AnalysisOrchestrator, OrchestratorDeps
+from app.core.errors import ProviderReason, ProviderUnavailable
 from app.schemas.analysis import AnalysisRequest, AnalysisResult, AnalysisStage
 from app.schemas.common import ConfidenceBand, EvidenceLevel, ValueOrigin, Verdict
 from app.services.cache import Cache
 from app.services.embeddings import EmbeddingService
+from app.services.llm.base import LLMProvider
 from app.services.llm.registry import LLMRouter
 from app.services.rag import RagStore
 from app.services.search.registry import SearchRouter
@@ -145,6 +147,35 @@ class TestDegradedPaths:
         assert result.failure_modes
         assert result.confidence.evidence_level is EvidenceLevel.MODELLED
         assert any("nevychádza zo zdrojov" in warning for warning in result.warnings)
+
+    async def test_a_broken_model_is_not_reported_as_missing_data(self, session, settings):
+        # The distinction that matters: "we could not look" is a configuration
+        # fault, "we looked and found nothing" is about the product. Reporting
+        # the first as the second leaves the operator with nothing to fix.
+        class Broken(LLMProvider):
+            name = "broken"
+
+            @property
+            def configured(self) -> bool:
+                return True
+
+            async def complete_json(self, **kwargs):
+                raise ProviderUnavailable(
+                    "ANTHROPIC_API_KEY was rejected by the Anthropic API.",
+                    reason=ProviderReason.REJECTED_CREDENTIALS,
+                )
+
+            async def complete_text(self, **kwargs) -> str:
+                raise ProviderUnavailable("nope", reason=ProviderReason.REJECTED_CREDENTIALS)
+
+        orchestrator = build_orchestrator(session, settings, llm=Broken())
+        result = await orchestrator.analyze(request())
+
+        assert result.verdict.decision is Verdict.SERVICE_UNAVAILABLE
+        assert result.verdict.decision is not Verdict.INSUFFICIENT_EVIDENCE
+        # The operator needs the actual reason, not a generic apology.
+        assert any("ANTHROPIC_API_KEY" in warning for warning in result.warnings)
+        assert result.failure_modes == []
 
     async def test_a_dead_estimate_still_refuses_to_guess(self, session, settings):
         # When the fallback has nothing to offer either, the honest answer is

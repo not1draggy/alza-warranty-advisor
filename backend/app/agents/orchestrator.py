@@ -178,6 +178,8 @@ class AnalysisOrchestrator:
             if estimated.failure_modes:
                 logger.info("estimation_fallback_used", modes=len(estimated.failure_modes))
                 extraction = estimated
+            elif estimated.provider_error and not extraction.provider_error:
+                extraction.provider_error = estimated.provider_error
         warnings.extend(extraction.warnings)
         assumptions.extend(extraction.assumptions)
         yield _done("extract", f"{counted(len(extraction.failure_modes), *FAULTS)}")
@@ -202,6 +204,17 @@ class AnalysisOrchestrator:
         verdict, reasons = decide_verdict(
             economics, confidence=confidence.score, evidence_level=confidence.evidence_level
         )
+        if not extraction.failure_modes and extraction.provider_error:
+            # Nothing came back because the model could not be called, not because
+            # the product has no public repair history. Saying "not enough data"
+            # here blames the evidence for a configuration fault and leaves the
+            # operator with nothing to act on.
+            verdict = Verdict.SERVICE_UNAVAILABLE
+            reasons = [
+                "Analýzu nebolo možné spustiť, pretože jazykový model neodpovedal. "
+                "Nejde o nedostatok informácií o produkte."
+            ]
+            warnings.append(f"Chyba poskytovateľa: {extraction.provider_error}")
         score = compute_risk_score(economics, product_price=request.product_price)
         if request.product_price is None and extraction.failure_modes:
             assumptions.append(
